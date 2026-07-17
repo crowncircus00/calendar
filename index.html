@@ -10,7 +10,7 @@
      1. CONFIGURATION & APP STATE (JS)
      ========================================== -->
   <script>
-    // 【必須】GASの「新しいデプロイ」で取得した最新のURL（https://script.google.com/～）をここに貼り付けてください
+    // 【必須】GASの「新しいデプロイ」で取得した最新のURLをここに貼り付けてください
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzLB7p_dy9c8WRanffHBi2tzorNdtUqDxw5IeMfjDpBSCrK2tf7ualrdmZ0TewcOm-Zvw/exec";
   </script>
 
@@ -64,7 +64,6 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
     }
 
-    /* サーカステントのガーランド風装飾 */
     header::after {
       content: "🎪 🌟 🎪 🌟 🎪 🌟 🎪 🌟 🎪";
       display: block;
@@ -128,7 +127,6 @@
       box-shadow: 0 0 12px #ff4d4d;
     }
 
-    /* 左右の余白をなくし、カレンダーを画面全体に大きく広げるレイアウト */
     .container {
       max-width: 1650px; 
       width: 95%;        
@@ -157,7 +155,6 @@
       flex-direction: column;
     }
 
-    /* コーナー飾り */
     .card::before {
       content: "✦";
       position: absolute;
@@ -181,7 +178,6 @@
       letter-spacing: 2px;
     }
 
-    /* カテゴリーフィルター（タブスタイル） */
     .filter-bar {
       display: flex;
       flex-wrap: wrap;
@@ -209,7 +205,6 @@
       font-weight: bold;
     }
 
-    /* カレンダーグリッド */
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -225,7 +220,6 @@
       border-bottom: 2px solid var(--border-color);
     }
 
-    /* カレンダーの日付セルのサイズ（横長で見やすく！） */
     .calendar-day {
       background-color: rgba(255,255,255,0.02);
       border: 1px solid var(--border-color);
@@ -284,13 +278,13 @@
       gap: 4px;
     }
 
-    /* 【注目！】カレンダー内の「帯状（背景塗りつぶし）」予定表示 */
+    /* 帯（リボン状）の予定デザイン */
     .mini-event {
       font-size: 0.75rem;
       font-weight: bold;
       padding: 3px 6px;
       border-radius: 4px;
-      color: #0f0a1c !important; /* 背景色に対して文字がはっきり読めるようにダークカラーに固定 */
+      color: #0f0a1c !important; 
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -300,7 +294,6 @@
       display: block;
     }
 
-    /* イベントリスト */
     .event-list {
       max-height: 600px;
       overflow-y: auto;
@@ -308,7 +301,6 @@
       flex-grow: 1;
     }
 
-    /* リストアイテムのシンプル化（余分な枠や余白をスリムに） */
     .list-item {
       padding: 10px 12px;
       border-bottom: 1px solid var(--border-color);
@@ -351,7 +343,6 @@
       flex-shrink: 0;
     }
 
-    /* モーダル */
     .modal {
       display: none;
       position: fixed;
@@ -464,7 +455,6 @@
       <form id="eventForm" onsubmit="saveEvent(event)">
         <input type="hidden" id="eventId">
         
-        <!-- 開始日と終了日の期間選択 -->
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div>
             <label for="eventDate">開始日</label>
@@ -481,7 +471,6 @@
           <input type="text" id="eventTitle" class="form-control" placeholder="例: クラウン・特別ショー" required maxlength="30">
         </div>
 
-        <!-- 4つの指定カテゴリ -->
         <div class="form-group">
           <label for="eventColor">カテゴリー</label>
           <select id="eventColor" class="form-control">
@@ -523,11 +512,51 @@
     let events = [];
     let isAdmin = false;
     let savedPassword = ""; 
-    let activeFilter = "all"; // 現在選択中のカテゴリーフィルター
+    let activeFilter = "all";
 
     window.onload = function() {
       fetchEvents();
     };
+
+    // --- 日付・時間形式をきれいにクレンジングする超重要関数 ---
+    function cleanTime(timeVal) {
+      if (!timeVal) return "";
+      let str = String(timeVal).trim();
+      
+      // ISO規格のフル日時、または1899年問題のフォーマットを検出して「HH:MM」だけ抜く
+      if (str.includes("T")) {
+        const parts = str.split("T");
+        if (parts[1]) {
+          const timeParts = parts[1].split(":");
+          if (timeParts[0] && timeParts[1]) {
+            return `${timeParts[0]}:${timeParts[1]}`;
+          }
+        }
+      }
+      
+      // "11:30:00" のような秒付きを "11:30" に削る
+      const colonCount = (str.match(/:/g) || []).length;
+      if (colonCount === 2) {
+        return str.substring(0, 5);
+      }
+      
+      return str;
+    }
+
+    // フォーマット済みの表示用文字列を返す
+    function getTimeRangeString(start, end) {
+      const cleanStart = cleanTime(start);
+      const cleanEnd = cleanTime(end);
+      
+      if (cleanStart && cleanEnd) {
+        return `${cleanStart}〜${cleanEnd}`;
+      } else if (cleanStart) {
+        return `${cleanStart}〜`;
+      } else if (cleanEnd) {
+        return `〜${cleanEnd}`;
+      }
+      return "未定";
+    }
 
     // --- 1. データ取得 (GET) ---
     async function fetchEvents() {
@@ -565,18 +594,6 @@
           alert("管理者としてログインしました。(保存時に検証されます)");
         }
       }
-    }
-
-    // --- 日付操作用ヘルパー ---
-    function getDatesInRange(startDate, endDate) {
-      const dates = [];
-      let curr = new Date(startDate);
-      const end = new Date(endDate);
-      while (curr <= end) {
-        dates.push(new Date(curr).toISOString().split('T')[0]);
-        curr.setDate(curr.getDate() + 1);
-      }
-      return dates;
     }
 
     function syncEndDate(val) {
@@ -634,8 +651,10 @@
         
         const filtered = events.filter(e => {
           if (!e.date) return false;
-          const endD = e.endDate || e.date;
-          return dateStr >= e.date && dateStr <= endD;
+          // GASから受け取った日付のフォーマットを標準化
+          const startD = e.date.split("T")[0];
+          const endD = (e.endDate || e.date).split("T")[0];
+          return dateStr >= startD && dateStr <= endD;
         });
 
         filtered.forEach(ev => {
@@ -662,8 +681,10 @@
             openAddModal(dateStr);
           } else if (filtered.length > 0) {
             let details = filtered.map(e => {
-              const displayTime = e.startTime && e.endTime ? `${e.startTime}〜${e.endTime}` : '未定';
-              return `【${e.title}】\n期間: ${e.date} 〜 ${e.endDate || e.date}\n時間: ${displayTime}\n詳細: ${e.description || 'なし'}`;
+              const displayTime = getTimeRangeString(e.startTime, e.endTime);
+              const cleanD = e.date.split("T")[0];
+              const cleanEndD = (e.endDate || e.date).split("T")[0];
+              return `【${e.title}】\n期間: ${cleanD} 〜 ${cleanEndD}\n時間: ${displayTime}\n詳細: ${e.description || 'なし'}`;
             }).join("\n\n");
             alert(details);
           }
@@ -677,7 +698,6 @@
     function filterCategory(colorCode) {
       activeFilter = colorCode;
       
-      // ボタンのアクティブ表示切り替え
       const tabs = document.querySelectorAll(".filter-tab");
       tabs.forEach(tab => tab.classList.remove("active"));
       
@@ -691,10 +711,12 @@
       const list = document.getElementById("eventList");
       list.innerHTML = "";
 
-      // 日付順にソート
-      let filteredEvents = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
+      let filteredEvents = [...events].sort((a, b) => {
+        const dateA = new Date(a.date.split("T")[0]);
+        const dateB = new Date(b.date.split("T")[0]);
+        return dateA - dateB;
+      });
 
-      // カテゴリーフィルターを適用
       if (activeFilter !== "all") {
         filteredEvents = filteredEvents.filter(ev => ev.color === activeFilter);
       }
@@ -709,8 +731,8 @@
         item.className = "list-item";
         item.style.borderLeftColor = ev.color || "#b388ff";
 
-        // 時間表示を極めてシンプルにする (未定 or 開始時間〜終了時間)
-        const timeDisplay = ev.startTime && ev.endTime ? `${ev.startTime}〜${ev.endTime}` : '未定';
+        // 【ご要望】おかしな表記を徹底排除して、極めてシンプルな時間のみに変換
+        const timeDisplay = getTimeRangeString(ev.startTime, ev.endTime);
 
         let icon = "✨";
         if (ev.color === "#4fc3f7") icon = "🌐 ";
@@ -729,10 +751,11 @@
           item.style.cursor = "pointer";
           item.onclick = () => openEditModal(ev);
         } else {
-          // 一般閲覧者はタップで詳細（日付や説明）をポップアップ
           item.style.cursor = "pointer";
           item.onclick = () => {
-            const dateRangeStr = ev.endDate && ev.endDate !== ev.date ? `${ev.date} 〜 ${ev.endDate}` : ev.date;
+            const cleanD = ev.date.split("T")[0];
+            const cleanEndD = (ev.endDate || ev.date).split("T")[0];
+            const dateRangeStr = cleanEndD && cleanEndD !== cleanD ? `${cleanD} 〜 ${cleanEndD}` : cleanD;
             alert(`【${ev.title}】\n日程: ${dateRangeStr}\n時間: ${timeDisplay}\n詳細: ${ev.description || 'なし'}`);
           };
         }
@@ -763,12 +786,20 @@
     function openEditModal(eventObj) {
       document.getElementById("modalTitle").innerText = "🎪 EDIT EVENT";
       document.getElementById("eventId").value = eventObj.id;
-      document.getElementById("eventDate").value = eventObj.date;
-      document.getElementById("eventEndDate").value = eventObj.endDate || eventObj.date;
+      
+      // 日付のクレンジング
+      const cleanD = eventObj.date ? eventObj.date.split("T")[0] : "";
+      const cleanEndD = eventObj.endDate ? eventObj.endDate.split("T")[0] : cleanD;
+
+      document.getElementById("eventDate").value = cleanD;
+      document.getElementById("eventEndDate").value = cleanEndD;
       document.getElementById("eventTitle").value = eventObj.title;
       document.getElementById("eventColor").value = eventObj.color || "#4fc3f7";
-      document.getElementById("startTime").value = eventObj.startTime || "";
-      document.getElementById("endTime").value = eventObj.endTime || "";
+      
+      // 時間のクレンジング
+      document.getElementById("startTime").value = cleanTime(eventObj.startTime);
+      document.getElementById("endTime").value = cleanTime(eventObj.endTime);
+      
       document.getElementById("eventDesc").value = eventObj.description || "";
 
       document.getElementById("deleteBtn").style.display = "inline-block";

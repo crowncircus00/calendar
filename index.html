@@ -3,742 +3,685 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CROWN CIRCUS Calendar</title>
+  <title>CROWN CIRCUS - Schedule Calendar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
   <style>
+    /* ==========================================
+       1. THEME & VARIABLES (Circus & Crown)
+       ========================================== */
     :root {
-      --primary-color: #1a1a2e;
-      --accent-color: #e94560;
-      --bg-color: #f4f6f9;
-      --card-bg: #ffffff;
-      --text-color: #333333;
-      --border-color: #e0e0e0;
+      --bg-color: #0b0c10;
+      --card-bg: #1f1f2e;
+      --gold: #d4af37;
+      --gold-dark: #aa8c2c;
+      --text-color: #f1f1f5;
+      --text-muted: #a0a0b0;
+      --red: #c0392b;
+      --red-hover: #e74c3c;
+      --border-color: #3a3a4f;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
     }
 
     body {
       background-color: var(--bg-color);
       color: var(--text-color);
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      background: var(--card-bg);
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-      padding: 20px;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      border-bottom: 2px solid var(--bg-color);
-      padding-bottom: 15px;
-    }
-
-    h1 {
-      font-size: 24px;
-      color: var(--primary-color);
-      font-weight: 700;
-      letter-spacing: 1px;
-    }
-
-    /* 管理者ログインエリア */
-    .admin-controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .admin-btn {
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background 0.3s;
-    }
-
-    .admin-btn:hover {
-      background-color: #2e2e4f;
-    }
-
-    .admin-btn.active {
-      background-color: var(--accent-color);
-    }
-
-    /* カレンダーヘッダー（年月切り替え） */
-    .calendar-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .nav-btn {
-      background: none;
-      border: 1px solid var(--border-color);
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      background-color: #fff;
-    }
-
-    .nav-btn:hover {
-      background-color: #f0f0f0;
-    }
-
-    #current-month-year {
-      font-size: 20px;
-      font-weight: bold;
-    }
-
-    /* カレンダーグリッド */
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 1px;
-      background-color: var(--border-color);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .weekday {
-      background-color: #f8f9fa;
-      padding: 12px 0;
-      text-align: center;
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .weekday:nth-child(7) { color: #007bff; } /* 土曜日 */
-    .weekday:nth-child(1) { color: #dc3545; } /* 日曜日 */
-
-    .day-cell {
-      background-color: #fff;
-      min-height: 110px;
-      padding: 6px;
+      font-family: 'Noto Serif JP', serif;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
+    }
+
+    /* ==========================================
+       2. CONFIGURATION & APP STATE (JS)
+       ========================================== */
+    <script>
+      // 【必須】GASの「新しいデプロイ」で取得した最新のURLに書き換えてください
+      const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzLB7p_dy9c8WRanffHBi2tzorNdtUqDxw5IeMfjDpBSCrK2tf7ualrdmZ0TewcOm-Zvw/exec";
+    </script>
+
+    /* ==========================================
+       3. STYLES (Header, Layout, Calendar, List)
+       ========================================== */
+    header {
+      background: linear-gradient(135deg, #111, #222);
+      border-bottom: 2px solid var(--gold);
+      padding: 20px;
+      text-align: center;
       position: relative;
     }
 
-    .day-number {
-      font-size: 14px;
+    header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 2.2rem;
+      color: var(--gold);
+      letter-spacing: 4px;
+      text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+    }
+
+    header p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 5px;
+    }
+
+    .admin-btn-container {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .btn {
+      background-color: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: var(--gold);
+      color: var(--bg-color);
+      box-shadow: 0 0 8px var(--gold);
+    }
+
+    .btn-danger {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .btn-danger:hover {
+      background-color: var(--red);
+      color: var(--text-color);
+      box-shadow: 0 0 8px var(--red);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 30px;
+      flex-grow: 1;
+    }
+
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .card-title {
+      font-family: 'Cinzel', serif;
+      color: var(--gold);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* カレンダー表示 */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      text-align: center;
+    }
+
+    .calendar-header-day {
+      color: var(--gold);
       font-weight: bold;
-      margin-bottom: 6px;
+      padding: 10px 0;
+      font-size: 0.9rem;
     }
 
-    .day-cell.other-month {
-      background-color: #fafafa;
-      color: #ccc;
-    }
-
-    .day-cell.today {
-      background-color: #fffbeb;
-    }
-    .day-cell.today .day-number {
-      color: var(--accent-color);
-    }
-
-    /* 予定スタイル */
-    .events-container {
+    .calendar-day {
+      background-color: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 4px;
+      min-height: 90px;
+      padding: 5px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      overflow-y: auto;
-      max-height: 80px;
+      align-items: flex-start;
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.2s;
     }
 
-    .event-bar {
-      font-size: 11px;
-      padding: 3px 6px;
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
+    .calendar-day:hover {
+      background-color: rgba(255,255,255,0.08);
+    }
+
+    .calendar-day.empty {
+      background-color: transparent;
+      border: none;
+      cursor: default;
+    }
+
+    .calendar-day .day-num {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--text-muted);
+    }
+
+    .calendar-day.today .day-num {
+      color: var(--gold);
+      text-shadow: 0 0 5px var(--gold);
+    }
+
+    .day-events {
+      width: 100%;
+      margin-top: 5px;
+      overflow-y: auto;
+      max-height: 60px;
+    }
+
+    .mini-event {
+      font-size: 0.7rem;
+      padding: 2px 4px;
+      margin-bottom: 2px;
+      border-radius: 2px;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: left;
+    }
+
+    /* イベントリスト */
+    .event-list {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .list-item {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      position: relative;
+      border-left: 4px solid var(--gold);
+      margin-bottom: 8px;
+      background-color: rgba(255,255,255,0.01);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .list-item-title {
+      font-weight: bold;
+      color: #fff;
+      font-size: 1rem;
+      margin-bottom: 4px;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis; /* 先頭7文字前後で自動省略（...表示） */
-      font-weight: 500;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      text-overflow: ellipsis;
+      max-width: calc(100% - 40px);
     }
 
-    .event-bar:hover {
-      opacity: 0.9;
+    .list-item-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
     }
 
-    /* モーダルダイアログ */
+    .list-item-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      white-space: pre-wrap;
+    }
+
+    /* モーダル */
     .modal {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.8);
       justify-content: center;
       align-items: center;
       z-index: 1000;
     }
 
     .modal-content {
-      background: white;
-      padding: 25px;
-      border-radius: 12px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--gold);
+      border-radius: 8px;
       width: 90%;
-      max-width: 450px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      max-width: 500px;
+      padding: 25px;
+      box-shadow: 0 0 20px var(--gold);
     }
 
-    .modal-header {
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 15px;
-      color: var(--primary-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .close-btn {
-      cursor: pointer;
-      font-size: 20px;
-      color: #999;
-    }
-
-    /* フォームスタイル */
     .form-group {
       margin-bottom: 15px;
     }
 
     .form-group label {
       display: block;
-      font-size: 13px;
-      font-weight: bold;
+      font-size: 0.85rem;
+      color: var(--gold);
       margin-bottom: 5px;
     }
 
-    .form-group input, .form-group textarea, .form-group select {
+    .form-control {
       width: 100%;
-      padding: 8px 12px;
+      padding: 10px;
+      background-color: rgba(0,0,0,0.3);
       border: 1px solid var(--border-color);
-      border-radius: 6px;
-      font-size: 14px;
+      border-radius: 4px;
+      color: var(--text-color);
+      font-family: inherit;
     }
 
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    .form-control:focus {
+      border-color: var(--gold);
+      outline: none;
     }
 
-    .btn-group {
+    .modal-actions {
       display: flex;
       justify-content: flex-end;
       gap: 10px;
       margin-top: 20px;
     }
 
-    .btn {
-      padding: 8px 16px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .btn-primary { background: var(--accent-color); color: white; }
-    .btn-secondary { background: #e0e0e0; color: #333; }
-    .btn-danger { background: #dc3545; color: white; }
-    .btn-duplicate { background: #007bff; color: white; } /* 複製ボタン用 */
-
-    /* 詳細ポップアップ（一般閲覧者用） */
-    .detail-view p {
-      margin-bottom: 10px;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .detail-time {
-      font-weight: bold;
-      color: var(--accent-color);
-    }
-    .detail-desc {
-      background: #f8f9fa;
-      padding: 10px;
-      border-radius: 6px;
-      white-space: pre-wrap;
-    }
-
-    /* ローディング表示 */
-    .loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255,255,255,0.7);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-      font-weight: bold;
-      font-size: 18px;
-    }
-
-    @media (max-width: 768px) {
-      .day-cell {
-        min-height: 80px;
-      }
-      .weekday {
-        font-size: 12px;
-      }
-      h1 {
-        font-size: 18px;
-      }
-    }
+    /* ジャンルカラー */
+    .color-show { border-left-color: #ff4757; }
+    .color-collab { border-left-color: #2ed573; }
+    .color-shop { border-left-color: #ffa502; }
+    .color-other { border-left-color: #1e90ff; }
   </style>
 </head>
 <body>
 
-  <div id="loading" class="loading-overlay" style="display: none;">データを読み込み中...</div>
+  <header>
+    <h1>CROWN CIRCUS</h1>
+    <p>Official Schedule Calendar</p>
+    <div class="admin-btn-container">
+      <button id="loginBtn" class="btn" onclick="toggleAdminMode()">管理者ログイン</button>
+    </div>
+  </header>
 
   <div class="container">
-    <header>
-      <h1>CROWN CIRCUS</h1>
-      <div class="admin-controls">
-        <button id="admin-login-btn" class="admin-btn" onclick="toggleAdminMode()">管理者ログイン</button>
+    <!-- カレンダーカード -->
+    <div class="card">
+      <div class="card-title">
+        <span id="calendarTitle">CALENDAR</span>
+        <div>
+          <button class="btn" onclick="prevMonth()">&lt; 前月</button>
+          <button class="btn" onclick="nextMonth()">次月 &gt;</button>
+        </div>
       </div>
-    </header>
-
-    <div class="calendar-nav">
-      <button class="nav-btn" onclick="moveMonth(-1)">&lt; 前の月</button>
-      <span id="current-month-year">2026年 7月</span>
-      <button class="nav-btn" onclick="moveMonth(1)">次の月 &gt;</button>
+      <div class="calendar-grid" id="calendarGrid"></div>
     </div>
 
-    <div class="calendar-grid" id="calendar-grid">
-      <!-- JavaScriptで曜日と日付セルを生成します -->
+    <!-- リストカード -->
+    <div class="card">
+      <div class="card-title">
+        <span>UPCOMING EVENTS</span>
+        <button id="addEventBtn" class="btn" style="display: none;" onclick="openAddModal()">＋ 予定追加</button>
+      </div>
+      <div class="event-list" id="eventList">
+        <p style="color: var(--text-muted); text-align: center; padding: 20px;">予定を読み込んでいます...</p>
+      </div>
     </div>
   </div>
 
-  <!-- 【管理者用】予定作成・編集・複製モーダル -->
-  <div id="event-modal" class="modal">
+  <!-- イベント追加・編集モーダル -->
+  <div id="eventModal" class="modal">
     <div class="modal-content">
-      <div class="modal-header">
-        <span id="modal-title">予定を登録</span>
-        <span class="close-btn" onclick="closeModal('event-modal')">&times;</span>
-      </div>
-      <form id="event-form" onsubmit="handleFormSubmit(event)">
-        <input type="hidden" id="event-id">
+      <h2 id="modalTitle" style="color: var(--gold); margin-bottom: 20px; font-family: 'Cinzel', serif;">EVENT FORM</h2>
+      <form id="eventForm" onsubmit="saveEvent(event)">
+        <input type="hidden" id="eventId">
         <div class="form-group">
-          <label>タイトル (カレンダー上では先頭約7文字のみ表示されます)</label>
-          <input type="text" id="event-title" required maxlength="100">
+          <label for="eventDate">日付</label>
+          <input type="date" id="eventDate" class="form-control" required>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>日付</label>
-            <input type="date" id="event-date" required>
-          </div>
-          <div class="form-group">
-            <label>カラー</label>
-            <select id="event-color">
-              <option value="#e94560">レッド</option>
-              <option value="#4e9f3d">グリーン</option>
-              <option value="#1f4068">ブルー</option>
-              <option value="#f0a500">イエロー</option>
-              <option value="#8e44ad">パープル</option>
-            </select>
-          </div>
+        <div class="form-group">
+          <label for="eventTitle">イベントタイトル</label>
+          <input type="text" id="eventTitle" class="form-control" placeholder="例: クラウン・特別ショー" required maxlength="30">
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>開始時間</label>
-            <input type="time" id="event-start-time">
+        <div class="form-group">
+          <label for="eventColor">カテゴリ（カラー）</label>
+          <select id="eventColor" class="form-control">
+            <option value="#ff4757">ショー開催 (赤)</option>
+            <option value="#2ed573">コラボ企画 (緑)</option>
+            <option value="#ffa502">ショップ物販 (橙)</option>
+            <option value="#1e90ff">その他 (青)</option>
+          </select>
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="startTime">開始時間</label>
+            <input type="text" id="startTime" class="form-control" placeholder="13:00" onblur="formatTime(this)">
           </div>
-          <div class="form-group">
-            <label>終了時間</label>
-            <input type="time" id="event-end-time">
+          <div>
+            <label for="endTime">終了時間</label>
+            <input type="text" id="endTime" class="form-control" placeholder="15:00" onblur="formatTime(this)">
           </div>
         </div>
         <div class="form-group">
-          <label>詳細内容</label>
-          <textarea id="event-desc" rows="3" placeholder="公演の詳細情報など"></textarea>
+          <label for="eventDesc">詳細内容</label>
+          <textarea id="eventDesc" class="form-control" rows="4" placeholder="詳細を入力してください"></textarea>
         </div>
-        <div class="btn-group">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('event-modal')">キャンセル</button>
-          <button type="button" id="delete-btn" class="btn btn-danger" onclick="handleDelete()" style="display:none;">削除</button>
-          <button type="button" id="duplicate-btn" class="btn btn-duplicate" onclick="handleDuplicate()" style="display:none;">複製</button>
-          <button type="submit" class="btn btn-primary">保存</button>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-danger" id="deleteBtn" style="display: none; margin-right: auto;" onclick="deleteEvent()">削除</button>
+          <button type="button" class="btn" onclick="closeModal()">キャンセル</button>
+          <button type="button" class="btn" id="dupBtn" style="display: none;" onclick="duplicateEvent()">複製</button>
+          <button type="submit" class="btn">保存する</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- 【一般閲覧者用】詳細ポップアップ -->
-  <div id="detail-modal" class="modal">
-    <div class="modal-content detail-view">
-      <div class="modal-header">
-        <span id="detail-title">予定のタイトル</span>
-        <span class="close-btn" onclick="closeModal('detail-modal')">&times;</span>
-      </div>
-      <p class="detail-time">⏰ 時間: <span id="detail-time-text">--:--</span></p>
-      <p>📝 詳細：</p>
-      <div id="detail-desc-text" class="detail-desc">詳細はありません。</div>
-      <div class="btn-group">
-        <button class="btn btn-secondary" onclick="closeModal('detail-modal')">閉じる</button>
-      </div>
-    </div>
-  </div>
-
   <script>
-    // ==========================================
-    // 設定パラメータ
-    // ==========================================
-    // コピペしたGASの「ウェブアプリURL」をここに貼り付けてください
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzLB7p_dy9c8WRanffHBi2tzorNdtUqDxw5IeMfjDpBSCrK2tf7ualrdmZ0TewcOm-Zvw/exec";
-    const ADMIN_PASSWORD = "tatibana0401"; // GAS側のADMIN_PASSWORDと同じにしてください
+    let currentDate = new Date();
+    let events = [];
+    let isAdmin = false;
+    let savedPassword = ""; // ログイン時に入力されたパスワードを保持
 
-    let currentYear = new Date().getFullYear();
-    let currentMonth = new Date().getMonth(); // 0-11
-    let events = []; // GASから読み込んだ全予定
-    let isAdmin = false; // 管理者かどうか
-
-    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
-
-    // 起動時の初期処理
-    window.onload = async () => {
-      showLoading(true);
-      await fetchEvents();
-      renderCalendar();
-      showLoading(false);
+    window.onload = function() {
+      fetchEvents();
     };
 
-    // ==========================================
-    // データ通信処理 (GAS API)
-    // ==========================================
+    // --- 1. データ取得 (GET) ---
     async function fetchEvents() {
       try {
-        const response = await fetch(`${GAS_WEB_APP_URL}?action=getEvents`);
-        if (response.ok) {
-          events = await response.json();
-        } else {
-          console.error("データの取得に失敗しました");
-        }
+        const response = await fetch(GAS_WEB_APP_URL);
+        if (!response.ok) throw new Error("CORS or Server error");
+        events = await response.json();
+        renderCalendar();
+        renderEventList();
       } catch (err) {
-        console.error("通信エラーが発生しました", err);
+        console.error(err);
+        alert("データの読み込みに失敗しました。GASのデプロイURLが正しいかご確認ください。");
       }
     }
 
-    function showLoading(show) {
-      document.getElementById('loading').style.display = show ? 'flex' : 'none';
-    }
-
-    // ==========================================
-    // 管理者認証処理
-    // ==========================================
-    async function toggleAdminMode() {
+    // --- 2. 管理者ログイン認証 ---
+    function toggleAdminMode() {
       if (isAdmin) {
         // ログアウト処理
         isAdmin = false;
-        document.getElementById("admin-login-btn").classList.remove("active");
-        document.getElementById("admin-login-btn").textContent = "管理者ログイン";
-        alert("ログアウトしました（閲覧モード）");
+        savedPassword = "";
+        document.getElementById("loginBtn").innerText = "管理者ログイン";
+        document.getElementById("addEventBtn").style.display = "none";
         renderCalendar();
+        renderEventList();
+        alert("ログアウトしました。");
       } else {
-        const pass = prompt("管理者パスワードを入力してください：");
-        if (pass === null) return;
-
-        showLoading(true);
-        try {
-          const response = await fetch(`${GAS_WEB_APP_URL}?action=verifyPassword&password=${encodeURIComponent(pass)}`);
-          const res = await response.json();
-          if (res.success) {
-            isAdmin = true;
-            document.getElementById("admin-login-btn").classList.add("active");
-            document.getElementById("admin-login-btn").textContent = "管理者ログアウト";
-            alert("管理者モードでログインしました！ダブルクリック、または予定クリックで編集・追加・複製が行えます。");
-          } else {
-            alert("パスワードが違います。");
-          }
-        } catch (err) {
-          alert("通信エラー：パスワード検証に失敗しました");
+        // ログイン処理
+        const pass = prompt("管理者パスワードを入力してください:");
+        if (pass) {
+          // ここではフロントだけでチェックせず、入力値を保持して後の保存時にGASで判定します
+          isAdmin = true;
+          savedPassword = pass;
+          document.getElementById("loginBtn").innerText = "ログアウト";
+          document.getElementById("addEventBtn").style.display = "block";
+          renderCalendar();
+          renderEventList();
+          alert("管理者として一時ログインしました。(保存時にパスワード検証されます)");
         }
-        showLoading(false);
-        renderCalendar();
       }
     }
 
-    // ==========================================
-    // カレンダー描画処理
-    // ==========================================
+    // --- 3. カレンダーレンダリング ---
     function renderCalendar() {
-      const grid = document.getElementById("calendar-grid");
+      const grid = document.getElementById("calendarGrid");
       grid.innerHTML = "";
 
-      // ヘッダー（年月）の更新
-      document.getElementById("current-month-year").textContent = `${currentYear}年 ${currentMonth + 1}月`;
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
 
-      // 1. 曜日の表示
-      weekdays.forEach(day => {
-        const dayHeader = document.createElement("div");
-        dayHeader.className = "weekday";
-        dayHeader.textContent = day;
-        grid.appendChild(dayHeader);
+      document.getElementById("calendarTitle").innerText = `${year}年 ${month + 1}月`;
+
+      // 曜日の見出し
+      const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+      dayNames.forEach(d => {
+        const div = document.createElement("div");
+        div.className = "calendar-header-day";
+        div.innerText = d;
+        grid.appendChild(div);
       });
 
-      // 2. 日付の計算
-      const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
-      const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
-      const prevLastDay = new Date(currentYear, currentMonth, 0).getDate();
+      const firstDay = new Date(year, month, 1).getDay();
+      const lastDate = new Date(year, month + 1, 0).getDate();
 
-      // 前月の末日埋め
-      for (let i = firstDayIndex; i > 0; i--) {
-        const prevDay = prevLastDay - i + 1;
-        const cell = createDayCell(prevDay, true);
-        grid.appendChild(cell);
+      // 前月の空セル
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement("div");
+        empty.className = "calendar-day empty";
+        grid.appendChild(empty);
       }
 
-      // 当月の日付埋め
+      // 当月の日付
       const today = new Date();
-      for (let i = 1; i <= lastDay; i++) {
-        const isToday = (today.getFullYear() === currentYear && today.getMonth() === currentMonth && today.getDate() === i);
-        const cell = createDayCell(i, false, isToday);
-        grid.appendChild(cell);
-      }
-
-      // 翌月の初頭埋め (7の倍数になるまで)
-      const totalCells = grid.children.length - 7; // 曜日ヘッダー除く
-      const nextDaysNeeded = 42 - totalCells; // 6週間分固定表示
-      for (let i = 1; i <= nextDaysNeeded; i++) {
-        const cell = createDayCell(i, true);
-        grid.appendChild(cell);
-      }
-    }
-
-    function createDayCell(dayNum, isOtherMonth, isToday = false) {
-      const cell = document.createElement("div");
-      cell.className = "day-cell";
-      if (isOtherMonth) cell.classList.add("other-month");
-      if (isToday) cell.classList.add("today");
-
-      const numEl = document.createElement("span");
-      numEl.className = "day-number";
-      numEl.textContent = dayNum;
-      cell.appendChild(numEl);
-
-      // 日付文字列を生成 (YYYY-MM-DD)
-      let cellMonth = currentMonth;
-      let cellYear = currentYear;
-      if (isOtherMonth) {
-        if (dayNum > 20) { // 前月
-          cellMonth = currentMonth - 1;
-          if (cellMonth < 0) { cellMonth = 11; cellYear--; }
-        } else { // 翌月
-          cellMonth = currentMonth + 1;
-          if (cellMonth > 11) { cellMonth = 0; cellYear++; }
-        }
-      }
-      const dateString = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-
-      // 管理者かつ当月のセルのみダブルクリックで予定作成可能に
-      if (isAdmin && !isOtherMonth) {
-        cell.addEventListener("dblclick", () => openAddModal(dateString));
-      }
-
-      // 予定の描画
-      const container = document.createElement("div");
-      container.className = "events-container";
-
-      const dayEvents = events.filter(e => e.date === dateString);
-      dayEvents.forEach(event => {
-        const eventBar = document.createElement("div");
-        eventBar.className = "event-bar";
-        eventBar.style.backgroundColor = event.color || "var(--accent-color)";
+      for (let day = 1; day <= lastDate; day++) {
+        const dayDiv = document.createElement("div");
+        dayDiv.className = "calendar-day";
         
-        // 文字制限：7文字前後に切り落として表示（ホバー時に全タイトル表示）
-        const truncatedTitle = event.title.length > 7 ? event.title.substring(0, 7) + "..." : event.title;
-        eventBar.textContent = truncatedTitle;
-        eventBar.title = event.title; // ツールチップにフルタイトルを保持
-
-        eventBar.addEventListener("click", (e) => {
-          e.stopPropagation(); // セルのクリックイベント連動を防ぐ
-          openDetailModal(event);
-        });
-        container.appendChild(eventBar);
-      });
-
-      cell.appendChild(container);
-      return cell;
-    }
-
-    function moveMonth(dir) {
-      currentMonth += dir;
-      if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-      } else if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-      }
-      renderCalendar();
-    }
-
-    // ==========================================
-    // 詳細・登録・複製モーダル処理
-    // ==========================================
-    function openDetailModal(event) {
-      if (isAdmin) {
-        // 管理者モードなら編集画面として開く
-        document.getElementById("modal-title").textContent = "予定を編集・複製";
-        document.getElementById("event-id").value = event.id;
-        document.getElementById("event-title").value = event.title;
-        document.getElementById("event-date").value = event.date;
-        document.getElementById("event-color").value = event.color || "#e94560";
-        document.getElementById("event-start-time").value = event.startTime || "";
-        document.getElementById("event-end-time").value = event.endTime || "";
-        document.getElementById("event-desc").value = event.description || "";
-
-        document.getElementById("delete-btn").style.display = "inline-block";
-        document.getElementById("duplicate-btn").style.display = "inline-block"; // 複製ボタン表示
-        openModal("event-modal");
-      } else {
-        // 一般閲覧者モードならポップアップ詳細ビューを開く
-        document.getElementById("detail-title").textContent = event.title;
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         
-        let timeStr = "終日";
-        if (event.startTime) {
-          timeStr = event.startTime;
-          if (event.endTime) timeStr += ` 〜 ${event.endTime}`;
+        if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+          dayDiv.classList.add("today");
         }
-        document.getElementById("detail-time-text").textContent = timeStr;
-        document.getElementById("detail-desc-text").textContent = event.description || "詳細説明はありません。";
+
+        const dayNumSpan = document.createElement("span");
+        dayNumSpan.className = "day-num";
+        dayNumSpan.innerText = day;
+        dayDiv.appendChild(dayNumSpan);
+
+        // この日に対応する予定
+        const dayEventsContainer = document.createElement("div");
+        dayEventsContainer.className = "day-events";
         
-        openModal("detail-modal");
-      }
-    }
-
-    function openAddModal(dateStr) {
-      document.getElementById("modal-title").textContent = "予定を登録";
-      document.getElementById("event-id").value = "id_" + Date.now(); // ユニークなID生成
-      document.getElementById("event-title").value = "";
-      document.getElementById("event-date").value = dateStr;
-      document.getElementById("event-color").value = "#e94560";
-      document.getElementById("event-start-time").value = "";
-      document.getElementById("event-end-time").value = "";
-      document.getElementById("event-desc").value = "";
-
-      document.getElementById("delete-btn").style.display = "none";
-      document.getElementById("duplicate-btn").style.display = "none";
-      openModal("event-modal");
-    }
-
-    function openModal(id) {
-      document.getElementById(id).style.display = "flex";
-    }
-
-    function closeModal(id) {
-      document.getElementById(id).style.display = "none";
-    }
-
-    // ==========================================
-    // データ追加・更新・削除・複製処理
-    // ==========================================
-    async function handleFormSubmit(e) {
-      e.preventDefault();
-      showLoading(true);
-
-      const eventData = {
-        id: document.getElementById("event-id").value,
-        date: document.getElementById("event-date").value,
-        title: document.getElementById("event-title").value,
-        color: document.getElementById("event-color").value,
-        startTime: document.getElementById("event-start-time").value,
-        endTime: document.getElementById("event-end-time").value,
-        description: document.getElementById("event-desc").value
-      };
-
-      try {
-        const response = await fetch(GAS_WEB_APP_URL, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "saveEvent",
-            password: ADMIN_PASSWORD,
-            event: eventData
-          })
+        const filtered = events.filter(e => e.date === dateStr);
+        filtered.forEach(ev => {
+          const mEv = document.createElement("div");
+          mEv.className = "mini-event";
+          mEv.style.backgroundColor = ev.color || "#1e90ff";
+          // タイトルが長い場合はカット
+          mEv.innerText = ev.title.length > 7 ? ev.title.substring(0, 7) + ".." : ev.title;
+          dayEventsContainer.appendChild(mEv);
         });
-        const res = await response.json();
-        if (res.success) {
-          closeModal("event-modal");
-          await fetchEvents();
-          renderCalendar();
-        } else {
-          alert("保存に失敗しました：" + res.message);
-        }
-      } catch(err) {
-        alert("保存中にエラーが発生しました");
+        
+        dayDiv.appendChild(dayEventsContainer);
+
+        // 管理者はクリックでその日に予定追加、一般/管理者は詳細表示
+        dayDiv.onclick = () => {
+          if (isAdmin) {
+            openAddModal(dateStr);
+          } else if (filtered.length > 0) {
+            alert(`【${filtered[0].title}】\n時間: ${filtered[0].startTime || '未定'}〜${filtered[0].endTime || '未定'}\n内容: ${filtered[0].description || 'なし'}`);
+          }
+        };
+
+        grid.appendChild(dayDiv);
       }
-      showLoading(false);
     }
 
-    async function handleDelete() {
-      if (!confirm("本当にこの予定を削除しますか？")) return;
-      showLoading(true);
-      const id = document.getElementById("event-id").value;
+    // --- 4. リストレンダリング ---
+    function renderEventList() {
+      const list = document.getElementById("eventList");
+      list.innerHTML = "";
 
-      try {
-        const response = await fetch(GAS_WEB_APP_URL, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "deleteEvent",
-            password: ADMIN_PASSWORD,
-            id: id
-          })
-        });
-        const res = await response.json();
-        if (res.success) {
-          closeModal("event-modal");
-          await fetchEvents();
-          renderCalendar();
-        } else {
-          alert("削除に失敗しました");
-        }
-      } catch(err) {
-        alert("削除中にエラーが発生しました");
-      }
-      showLoading(false);
-    }
+      // 直近の予定をソートして表示 (日付順)
+      const sortedEvents = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // ⭐ 複製機能：ダイアログのデータをもとに別日で新規登録
-    function handleDuplicate() {
-      const targetDateStr = prompt("複製先の日付を半角英数字で入力してください (例: 2026-07-25)", document.getElementById("event-date").value);
-      if (!targetDateStr) return;
-
-      // 簡単な日付チェック
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDateStr)) {
-        alert("日付の形式が正しくありません。YYYY-MM-DD 形式で入力してください。");
+      if (sortedEvents.length === 0) {
+        list.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">登録された予定はありません。</p>`;
         return;
       }
 
-      // 新規IDを振ってフォームに入力しなおし、そのまま保存を実行させる
-      document.getElementById("event-id").value = "id_" + Date.now();
-      document.getElementById("event-date").value = targetDateStr;
+      sortedEvents.forEach(ev => {
+        const item = document.createElement("div");
+        item.className = "list-item";
+        item.style.borderLeftColor = ev.color || "#1e90ff";
+
+        const timeStr = `${ev.startTime || '--:--'} 〜 ${ev.endTime || '--:--'}`;
+
+        item.innerHTML = `
+          <div class="list-item-title" title="${ev.title}">${ev.title}</div>
+          <div class="list-item-time">${ev.date} | ${timeStr}</div>
+          ${ev.description ? `<div class="list-item-desc">${ev.description}</div>` : ""}
+        `;
+
+        // 管理者モードならリスト項目クリックで編集可能
+        if (isAdmin) {
+          item.style.cursor = "pointer";
+          item.onclick = () => openEditModal(ev);
+        }
+
+        list.appendChild(item);
+      });
+    }
+
+    // --- 5. モーダル操作 ---
+    function openAddModal(dateStr = "") {
+      document.getElementById("modalTitle").innerText = "CREATE EVENT";
+      document.getElementById("eventId").value = "id_" + Date.now();
+      document.getElementById("eventDate").value = dateStr || new Date().toISOString().split('T')[0];
+      document.getElementById("eventTitle").value = "";
+      document.getElementById("eventColor").value = "#ff4757";
+      document.getElementById("startTime").value = "";
+      document.getElementById("endTime").value = "";
+      document.getElementById("eventDesc").value = "";
       
-      // 自動で保存フォーム送信処理を実行
-      document.getElementById("event-form").requestSubmit();
-      alert(`複製予定を「${targetDateStr}」に反映しました！`);
+      document.getElementById("deleteBtn").style.display = "none";
+      document.getElementById("dupBtn").style.display = "none";
+      document.getElementById("eventModal").style.display = "flex";
+    }
+
+    function openEditModal(eventObj) {
+      document.getElementById("modalTitle").innerText = "EDIT EVENT";
+      document.getElementById("eventId").value = eventObj.id;
+      document.getElementById("eventDate").value = eventObj.date;
+      document.getElementById("eventTitle").value = eventObj.title;
+      document.getElementById("eventColor").value = eventObj.color || "#ff4757";
+      document.getElementById("startTime").value = eventObj.startTime || "";
+      document.getElementById("endTime").value = eventObj.endTime || "";
+      document.getElementById("eventDesc").value = eventObj.description || "";
+
+      document.getElementById("deleteBtn").style.display = "inline-block";
+      document.getElementById("dupBtn").style.display = "inline-block";
+      document.getElementById("eventModal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("eventModal").style.display = "none";
+    }
+
+    // --- 6. 時間のオートフォーマット ---
+    function formatTime(input) {
+      let val = input.value.replace(/[^0-9]/g, ""); // 数字以外を除外
+      if (val.length === 3) {
+        val = "0" + val; // "930" -> "0930"
+      }
+      if (val.length === 4) {
+        const h = val.substring(0, 2);
+        const m = val.substring(2, 4);
+        if (parseInt(h) < 24 && parseInt(m) < 60) {
+          input.value = `${h}:${m}`;
+        }
+      }
+    }
+
+    // --- 7. データ送信処理 (POST: 保存) ---
+    async function saveEvent(e) {
+      e.preventDefault();
+
+      const eventData = {
+        id: document.getElementById("eventId").value,
+        date: document.getElementById("eventDate").value,
+        title: document.getElementById("eventTitle").value,
+        color: document.getElementById("eventColor").value,
+        startTime: document.getElementById("startTime").value,
+        endTime: document.getElementById("endTime").value,
+        description: document.getElementById("eventDesc").value
+      };
+
+      const payload = {
+        password: savedPassword, // ログイン時に入力されたパスワードを送信
+        action: "save",
+        event: eventData
+      };
+
+      await sendToGAS(payload, "保存が完了しました！");
+    }
+
+    // --- 8. データ送信処理 (POST: 削除) ---
+    async function deleteEvent() {
+      if (!confirm("このイベントを削除してもよろしいですか？")) return;
+
+      const payload = {
+        password: savedPassword,
+        action: "delete",
+        event: { id: document.getElementById("eventId").value }
+      };
+
+      await sendToGAS(payload, "削除しました。");
+    }
+
+    // --- 9. データ送信処理 (複製) ---
+    function duplicateEvent() {
+      document.getElementById("eventId").value = "id_" + Date.now();
+      document.getElementById("modalTitle").innerText = "CREATE EVENT (DUPLICATED)";
+      document.getElementById("deleteBtn").style.display = "none";
+      document.getElementById("dupBtn").style.display = "none";
+      alert("現在のデータをコピーしました。保存ボタンを押すと新規登録されます。");
+    }
+
+    // --- 10. GAS送信共通関数 ---
+    async function sendToGAS(payload, successMessage) {
+      try {
+        const response = await fetch(GAS_WEB_APP_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error("CORS or Network error");
+        const result = await response.json();
+
+        if (result.status === "success") {
+          alert(successMessage);
+          closeModal();
+          fetchEvents(); // 一覧とカレンダーを再読み込み
+        } else {
+          // ここでGAS側からの「パスワードが違います」等をキャッチして表示します
+          alert(result.message || "エラーが発生しました。");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("通信エラーが発生しました。");
+      }
+    }
+
+    // カレンダー月変更
+    function prevMonth() {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    }
+    function nextMonth() {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
     }
   </script>
 </body>

@@ -17,7 +17,7 @@
   <style>
     /* ==========================================
        2. THEME & VARIABLES (Circus & Crown)
-       ========================================== */
+       ========================================== --> */
     :root {
       --bg-color: #0f0a1c; 
       --card-bg: #1c1430; 
@@ -54,7 +54,7 @@
 
     /* ==========================================
        3. STYLES (Header, Layout, Calendar, List)
-       ========================================== */
+       ========================================== --> */
     header {
       background: linear-gradient(180deg, #180933 0%, #0f0a1c 100%);
       border-bottom: 3px double var(--gold);
@@ -127,7 +127,6 @@
       box-shadow: 0 0 12px #ff4d4d;
     }
 
-    /* 複製・繰り返しボタン用のスタイル */
     .btn-secondary {
       border-color: #10b981;
       color: #10b981;
@@ -217,10 +216,16 @@
       font-weight: bold;
     }
 
+    /* 週表示のカレンダーラッパー */
+    .calendar-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 10px; 
+      gap: 4px; /* 連動帯のため少し狭く調整 */
       text-align: center;
     }
 
@@ -237,20 +242,18 @@
       border: 1px solid var(--border-color);
       border-radius: 8px;
       min-height: 140px; 
-      padding: 8px;
+      padding: 6px;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
       position: relative;
       cursor: pointer;
       transition: all 0.2s ease;
-      overflow: hidden; /* セルがはみ出さないようにガード */
     }
 
     .calendar-day:hover {
       background-color: rgba(179, 136, 255, 0.08);
       border-color: var(--gold);
-      transform: translateY(-2px);
     }
 
     .calendar-day.empty {
@@ -267,7 +270,8 @@
       font-size: 1rem;
       font-weight: bold;
       color: var(--text-muted);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
+      z-index: 2; /* 帯より前面に配置 */
     }
 
     .calendar-day.today {
@@ -283,27 +287,41 @@
 
     .day-events {
       width: 100%;
-      margin-top: 5px;
-      overflow-y: auto;
-      max-height: 95px; 
+      margin-top: 2px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px; /* 帯同士の隙間 */
+      min-height: 90px;
     }
 
+    /* 日付をまたぐ帯のスタイル定義 */
     .mini-event {
       font-size: 0.72rem;
       font-weight: bold;
       padding: 3px 6px;
-      border-radius: 4px;
       color: #0f0a1c !important; 
       overflow: hidden;
-      text-overflow: ellipsis; /* 長い文字が枠を崩さないよう...にする */
+      text-overflow: ellipsis;
       white-space: nowrap;
       text-align: left;
       box-shadow: 0 1px 3px rgba(0,0,0,0.3);
       width: 100%;
       display: block;
+      position: relative;
+      z-index: 5;
+    }
+
+    /* つながっているように見せるための端の角丸調整クラス */
+    .event-start {
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+    }
+    .event-end {
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+    }
+    .event-middle {
+      border-radius: 0px;
     }
 
     .event-list {
@@ -325,7 +343,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      overflow: hidden; /* リスト項目のはみ出しを防ぐ */
+      overflow: hidden;
     }
 
     .list-item:hover {
@@ -335,7 +353,7 @@
 
     .list-item-left {
       flex: 1;
-      min-width: 0; /* フレックスアイテムの縮小を有効にし、タイトルのはみ出しを防ぐ */
+      min-width: 0;
       padding-right: 15px;
     }
 
@@ -345,7 +363,7 @@
       font-size: 1rem;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis; /* UPCOMING内の長いタイトルを...で省略 */
+      text-overflow: ellipsis;
     }
 
     .list-item-right-info {
@@ -450,7 +468,9 @@
           <button class="btn" onclick="nextMonth()">次月 🎪</button>
         </div>
       </div>
-      <div class="calendar-grid" id="calendarGrid"></div>
+      <div class="calendar-wrapper">
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
     </div>
 
     <!-- リストカード -->
@@ -545,7 +565,7 @@
       fetchEvents();
     };
 
-    // 【時差による1日ズレを完全解消する処理】
+    // 日付クレンジング
     function cleanDateStr(dateVal) {
       if (!dateVal) return "";
       let str = String(dateVal).trim();
@@ -568,7 +588,6 @@
       return str;
     }
 
-    // 表示用の日付文字列 (M/D) に安全に変換する関数
     function formatToShortDate(dateVal, endDateVal) {
       const start = cleanDateStr(dateVal);
       const end = cleanDateStr(endDateVal || dateVal);
@@ -586,7 +605,6 @@
       return toMd(start);
     }
 
-    // 9時間ズレ解消のための時間クレンジング処理
     function cleanTime(timeVal) {
       if (!timeVal) return "";
       let str = String(timeVal).trim();
@@ -636,7 +654,6 @@
       return "未定";
     }
 
-    // ジャンルコードから名前を返すヘルパー
     function getGenreName(colorCode) {
       switch(colorCode) {
         case "#4fc3f7": return "🌐 IRIAM";
@@ -647,7 +664,6 @@
       }
     }
 
-    // 時間順（昇順）にソートする並び替え関数
     function sortByTime(a, b) {
       const timeA = cleanTime(a.startTime) || "99:99";
       const timeB = cleanTime(b.startTime) || "99:99";
@@ -699,7 +715,7 @@
       }
     }
 
-    // --- 3. カレンダー描画 ---
+    // --- 3. カレンダー描画（日付跨ぎの連結帯対応） ---
     function renderCalendar() {
       const grid = document.getElementById("calendarGrid");
       grid.innerHTML = "";
@@ -720,19 +736,24 @@
       const firstDay = new Date(year, month, 1).getDay();
       const lastDate = new Date(year, month + 1, 0).getDate();
 
+      // 前月の空白埋め
       for (let i = 0; i < firstDay; i++) {
         const empty = document.createElement("div");
         empty.className = "calendar-day empty";
         grid.appendChild(empty);
       }
 
+      // 月内の全日付のセルを生成＆マッピング
+      const dayCells = {};
       const today = new Date();
+      
       for (let day = 1; day <= lastDate; day++) {
         const dayDiv = document.createElement("div");
         dayDiv.className = "calendar-day";
         
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        
+        dayCells[dateStr] = dayDiv;
+
         if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
           dayDiv.classList.add("today");
         }
@@ -744,53 +765,116 @@
 
         const dayEventsContainer = document.createElement("div");
         dayEventsContainer.className = "day-events";
-        
-        // 1. カテゴリーフィルター & 日付の一致でフィルタリング
-        let filtered = events.filter(e => {
-          if (!e.date) return false;
-          const startD = cleanDateStr(e.date);
-          const endD = cleanDateStr(e.endDate || e.date);
-          const isInRange = dateStr >= startD && dateStr <= endD;
-          
-          if (activeFilter === "all") {
-            return isInRange;
-          } else {
-            return isInRange && e.color === activeFilter;
-          }
-        });
-
-        // 2. 帯を「時間通りに並び替え」
-        filtered.sort(sortByTime);
-
-        // 3. 描画（絵文字なし・色のみで判別・開始時間を表示）
-        filtered.forEach(ev => {
-          const mEv = document.createElement("div");
-          mEv.className = "mini-event";
-          mEv.style.backgroundColor = ev.color || "#b388ff";
-          
-          const cleanStart = cleanTime(ev.startTime);
-          const timePrefix = cleanStart ? `${cleanStart}〜` : "";
-          mEv.innerText = `${timePrefix}${ev.title}`;
-          dayEventsContainer.appendChild(mEv);
-        });
-        
+        dayEventsContainer.id = `events-${dateStr}`;
         dayDiv.appendChild(dayEventsContainer);
 
-        dayDiv.onclick = () => {
-          if (isAdmin) {
-            openAddModal(dateStr);
-          } else if (filtered.length > 0) {
-            // 一般ユーザー向けのポップアップ表示。指定に従い「期間欄」を削除し構成。
-            let details = filtered.map(e => {
-              const displayTime = getTimeRangeString(e.startTime, e.endTime);
-              const genre = getGenreName(e.color);
-              return `【ジャンル】: ${genre}\n【時間】: ${displayTime}\n【タイトル】: ${e.title}\n【詳細】: ${e.description || 'なし'}`;
-            }).join("\n\n✨🎪✨\n\n");
-            alert(details);
-          }
-        };
-
         grid.appendChild(dayDiv);
+      }
+
+      // 表示対象月内のイベントをフィルタリング＆ソート
+      let activeEvents = events.filter(e => {
+        if (!e.date) return false;
+        const startD = cleanDateStr(e.date);
+        const endD = cleanDateStr(e.endDate || e.date);
+        
+        const currentMonthStart = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+        const currentMonthEnd = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDate).padStart(2, '0')}`;
+        
+        // 期間が当月に少しでも被っているか
+        const isOverlapping = (startD <= currentMonthEnd && endD >= currentMonthStart);
+        
+        if (activeFilter === "all") {
+          return isOverlapping;
+        } else {
+          return isOverlapping && e.color === activeFilter;
+        }
+      });
+
+      // 表示順を一貫させるため時間順（および日付順）にソート
+      activeEvents.sort((a, b) => {
+        const dateCompare = cleanDateStr(a.date).localeCompare(cleanDateStr(b.date));
+        if (dateCompare !== 0) return dateCompare;
+        return sortByTime(a, b);
+      });
+
+      // 該当日のセルに、またぎ判定を行いながら帯を描画
+      activeEvents.forEach(ev => {
+        const startD = cleanDateStr(ev.date);
+        const endD = cleanDateStr(ev.endDate || ev.date);
+
+        for (let day = 1; day <= lastDate; day++) {
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          
+          if (dateStr >= startD && dateStr <= endD) {
+            const container = document.getElementById(`events-${dateStr}`);
+            if (container) {
+              const mEv = document.createElement("div");
+              mEv.className = "mini-event";
+              mEv.style.backgroundColor = ev.color || "#b388ff";
+              
+              // カレンダー上で「連続した1本の帯」に見えるように端っこの角丸を制御
+              if (dateStr === startD && dateStr === endD) {
+                mEv.classList.add("event-start", "event-end");
+              } else if (dateStr === startD) {
+                mEv.classList.add("event-start");
+              } else if (dateStr === endD) {
+                mEv.classList.add("event-end");
+              } else {
+                mEv.classList.add("event-middle");
+              }
+
+              // 開始時間を帯の左端（初日）にだけ表記してスッキリさせる
+              const cleanStart = cleanTime(ev.startTime);
+              const isFirstDay = (dateStr === startD);
+              const timePrefix = (cleanStart && isFirstDay) ? `${cleanStart}〜` : "";
+              
+              mEv.innerText = `${timePrefix}${ev.title}`;
+              
+              // 一般・管理者別クリックイベント
+              mEv.onclick = (e) => {
+                e.stopPropagation(); // セル自体のクリック判定を防止
+                if (isAdmin) {
+                  openEditModal(ev);
+                } else {
+                  const displayTime = getTimeRangeString(ev.startTime, ev.endTime);
+                  const genre = getGenreName(ev.color);
+                  alert(`【ジャンル】: ${genre}\n【時間】: ${displayTime}\n【タイトル】: ${ev.title}\n【詳細】: ${ev.description || 'なし'}`);
+                }
+              };
+              
+              container.appendChild(mEv);
+            }
+          }
+        }
+      });
+
+      // 空白の日のセル全体のクリック制御
+      for (let day = 1; day <= lastDate; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const cell = dayCells[dateStr];
+        if (cell) {
+          cell.onclick = () => {
+            if (isAdmin) {
+              openAddModal(dateStr);
+            } else {
+              // その日のイベント一覧をポップアップ表示
+              let dayEvents = activeEvents.filter(e => {
+                const startD = cleanDateStr(e.date);
+                const endD = cleanDateStr(e.endDate || e.date);
+                return dateStr >= startD && dateStr <= endD;
+              });
+
+              if (dayEvents.length > 0) {
+                let details = dayEvents.map(e => {
+                  const displayTime = getTimeRangeString(e.startTime, e.endTime);
+                  const genre = getGenreName(e.color);
+                  return `【ジャンル】: ${genre}\n【時間】: ${displayTime}\n【タイトル】: ${e.title}\n【詳細】: ${e.description || 'なし'}`;
+                }).join("\n\n✨🎪✨\n\n");
+                alert(details);
+              }
+            }
+          };
+        }
       }
     }
 
@@ -801,7 +885,6 @@
       tabs.forEach(tab => tab.classList.remove("active"));
       event.target.classList.add("active");
       
-      // UPCOMINGリストだけでなく、カレンダーも同期して絞り込み
       renderCalendar();
       renderEventList();
     }
@@ -816,7 +899,6 @@
         return ev.color === activeFilter;
       });
 
-      // 1. 日付順、2. 開始時間順でソート
       filteredEvents.sort((a, b) => {
         const strA = cleanDateStr(a.date);
         const strB = cleanDateStr(b.date);
@@ -845,7 +927,6 @@
         if (ev.color === "#ff8da1") icon = "💌 ";
         if (ev.color === "#b388ff") icon = "👑 ";
 
-        // はみ出ない構造にして、CSS ellipsis(...) でカット
         item.innerHTML = `
           <div class="list-item-left">
             <div class="list-item-title" title="${ev.title}">${icon}${ev.title}</div>
@@ -856,17 +937,16 @@
           </div>
         `;
 
-        if (isAdmin) {
-          item.style.cursor = "pointer";
-          item.onclick = () => openEditModal(ev);
-        } else {
-          item.style.cursor = "pointer";
-          item.onclick = () => {
+        item.style.cursor = "pointer";
+        item.onclick = () => {
+          if (isAdmin) {
+            openEditModal(ev);
+          } else {
             const displayTime = getTimeRangeString(ev.startTime, ev.endTime);
             const genre = getGenreName(ev.color);
             alert(`【ジャンル】: ${genre}\n【時間】: ${displayTime}\n【タイトル】: ${ev.title}\n【詳細】: ${ev.description || 'なし'}`);
-          };
-        }
+          }
+        };
 
         list.appendChild(item);
       });
@@ -887,7 +967,7 @@
       document.getElementById("eventDesc").value = "";
       
       document.getElementById("deleteBtn").style.display = "none";
-      document.getElementById("dupToOtherDayBtn").style.display = "none"; // 新規作成時は非表示
+      document.getElementById("dupToOtherDayBtn").style.display = "none";
       document.getElementById("eventModal").style.display = "flex";
     }
 
@@ -908,7 +988,7 @@
       document.getElementById("eventDesc").value = eventObj.description || "";
 
       document.getElementById("deleteBtn").style.display = "inline-block";
-      document.getElementById("dupToOtherDayBtn").style.display = "inline-block"; // 編集時は表示
+      document.getElementById("dupToOtherDayBtn").style.display = "inline-block";
       document.getElementById("eventModal").style.display = "flex";
     }
 
@@ -928,7 +1008,7 @@
       }
     }
 
-    // --- 7. 保存・削除・新繰り返し機能 ---
+    // --- 7. 保存・削除・繰り返し機能 ---
     async function saveEvent(e) {
       if (e) e.preventDefault();
 
@@ -938,7 +1018,7 @@
       const eventData = {
         id: document.getElementById("eventId").value,
         date: document.getElementById("eventDate").value,
-        endDate: document.getElementById("eventEndDate").value,
+        endDate: document.getElementById("eventEndDate").value, // 終了日を確実に保存
         title: document.getElementById("eventTitle").value,
         color: document.getElementById("eventColor").value,
         startTime: startClean,
@@ -955,18 +1035,21 @@
       await sendToGAS(payload, "保存が完了しました！🎪");
     }
 
-    // ★★★ 超進化：選べる繰り返し複製メニュー機能 ★★★
     async function openDuplicateMenu() {
       const baseDateStr = document.getElementById("eventDate").value;
+      const baseEndDateStr = document.getElementById("eventEndDate").value || baseDateStr;
       if (!baseDateStr) return;
       
       const baseDate = new Date(baseDateStr);
+      const baseEndDate = new Date(baseEndDateStr);
+      const daySpan = Math.round((baseEndDate - baseDate) / (1000 * 60 * 60 * 24)); // 複数日期間の幅を保持
+      
       const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
       const dayName = dayNames[baseDate.getDay()];
 
       const menuMsg = `🤖 繰り返し方法を選択してください:
 ----------------------------------------------
-1 : 別日を指定して1件複製
+1 : 別日を指定して一括複製 (期間維持)
 2 : 毎週 [${dayName}曜日] 繰り返し
 3 : この後7日間連続繰り返し
 4 : カスタム間隔繰り返し
@@ -986,16 +1069,23 @@
 
       // --- パターン1 : 特定の別日指定 ---
       if (choice === "1") {
-        const targetDate = prompt("複製先の日付を入力してください。\n例: 2026-07-20", baseDateStr);
+        const targetDate = prompt("複製先の「開始日」を入力してください。\n例: 2026-07-20", baseDateStr);
         if (!targetDate) return;
         if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
           alert("日付は「YYYY-MM-DD」形式で入力してください。");
           return;
         }
+        
+        // 期間幅を計算して複製先の終了日も自動算出
+        const newStart = new Date(targetDate);
+        const newEnd = new Date(newStart);
+        newEnd.setDate(newStart.getDate() + daySpan);
+        const targetEndDate = newEnd.toISOString().split("T")[0];
+
         duplicatePayloads.push({
           id: "id_" + Date.now() + "_0",
           date: targetDate,
-          endDate: targetDate,
+          endDate: targetEndDate,
           title, color, startTime, endTime, description
         });
 
@@ -1009,13 +1099,15 @@
         }
 
         for (let i = 1; i <= count; i++) {
-          let nextDate = new Date(baseDate);
-          nextDate.setDate(baseDate.getDate() + (i * 7));
-          const dateStr = nextDate.toISOString().split("T")[0];
+          let nextStart = new Date(baseDate);
+          nextStart.setDate(baseDate.getDate() + (i * 7));
+          let nextEnd = new Date(nextStart);
+          nextEnd.setDate(nextStart.getDate() + daySpan);
+
           duplicatePayloads.push({
             id: `id_${Date.now()}_w_${i}`,
-            date: dateStr,
-            endDate: dateStr,
+            date: nextStart.toISOString().split("T")[0],
+            endDate: nextEnd.toISOString().split("T")[0],
             title, color, startTime, endTime, description
           });
         }
@@ -1024,13 +1116,15 @@
       } else if (choice === "3") {
         if (!confirm("翌日から連続7日間の予定を複製します。よろしいですか？")) return;
         for (let i = 1; i <= 7; i++) {
-          let nextDate = new Date(baseDate);
-          nextDate.setDate(baseDate.getDate() + i);
-          const dateStr = nextDate.toISOString().split("T")[0];
+          let nextStart = new Date(baseDate);
+          nextStart.setDate(baseDate.getDate() + i);
+          let nextEnd = new Date(nextStart);
+          nextEnd.setDate(nextStart.getDate() + daySpan);
+
           duplicatePayloads.push({
             id: `id_${Date.now()}_7d_${i}`,
-            date: dateStr,
-            endDate: dateStr,
+            date: nextStart.toISOString().split("T")[0],
+            endDate: nextEnd.toISOString().split("T")[0],
             title, color, startTime, endTime, description
           });
         }
@@ -1059,19 +1153,22 @@
 
         const mode = unitChoice.toLowerCase();
         for (let i = 1; i <= count; i++) {
-          let nextDate = new Date(baseDate);
+          let nextStart = new Date(baseDate);
           if (mode === "d") {
-            nextDate.setDate(baseDate.getDate() + (i * interval));
+            nextStart.setDate(baseDate.getDate() + (i * interval));
           } else if (mode === "w") {
-            nextDate.setDate(baseDate.getDate() + (i * interval * 7));
+            nextStart.setDate(baseDate.getDate() + (i * interval * 7));
           } else if (mode === "m") {
-            nextDate.setMonth(baseDate.getMonth() + (i * interval));
+            nextStart.setMonth(baseDate.getMonth() + (i * interval));
           }
-          const dateStr = nextDate.toISOString().split("T")[0];
+          
+          let nextEnd = new Date(nextStart);
+          nextEnd.setDate(nextStart.getDate() + daySpan);
+
           duplicatePayloads.push({
             id: `id_${Date.now()}_custom_${i}`,
-            date: dateStr,
-            endDate: dateStr,
+            date: nextStart.toISOString().split("T")[0],
+            endDate: nextEnd.toISOString().split("T")[0],
             title, color, startTime, endTime, description
           });
         }
@@ -1080,10 +1177,10 @@
         return;
       }
 
-      // 一括登録の処理を順次実行
+      // 一括処理の実行
       if (duplicatePayloads.length > 0) {
         let successCount = 0;
-        alert(`これより計 ${duplicatePayloads.length} 件の繰り返し保存処理をバックグラウンドで開始します。\n連続処理のため、しばらくお待ちください...`);
+        alert(`これより計 ${duplicatePayloads.length} 件の繰り返し保存処理を開始します...\nしばらくお待ちください。`);
         
         for (const targetEvent of duplicatePayloads) {
           const payload = {
@@ -1101,11 +1198,11 @@
               successCount++;
             }
           } catch (err) {
-            console.error("個別保存失敗: ", err);
+            console.error("複製保存失敗: ", err);
           }
         }
 
-        alert(`🔁 繰り返し登録が正常に終了しました！\n（成功: ${successCount} 件 / ${duplicatePayloads.length} 件）`);
+        alert(`🔁 繰り返し一括登録が終了しました！\n（成功: ${successCount} 件 / ${duplicatePayloads.length} 件）`);
         closeModal();
         fetchEvents();
       }

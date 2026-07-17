@@ -17,7 +17,7 @@
   <style>
     /* ==========================================
        2. THEME & VARIABLES (Circus & Crown)
-       ========================================== --> */
+       ========================================== */
     :root {
       --bg-color: #0f0a1c; 
       --card-bg: #1c1430; 
@@ -125,6 +125,18 @@
       background-color: #ff4d4d;
       color: var(--text-color);
       box-shadow: 0 0 12px #ff4d4d;
+    }
+
+    /* 複製・繰り返しボタン用のスタイル */
+    .btn-secondary {
+      border-color: #10b981;
+      color: #10b981;
+    }
+
+    .btn-secondary:hover {
+      background-color: #10b981;
+      color: #0f0a1c;
+      box-shadow: 0 0 12px #10b981;
     }
 
     .container {
@@ -410,6 +422,7 @@
     .modal-actions {
       display: flex;
       justify-content: flex-end;
+      flex-wrap: wrap;
       gap: 12px;
       margin-top: 25px;
     }
@@ -511,8 +524,8 @@
 
         <div class="modal-actions">
           <button type="button" class="btn btn-danger" id="deleteBtn" style="display: none; margin-right: auto;" onclick="deleteEvent()">🗑️ 削除</button>
+          <button type="button" class="btn btn-secondary" id="dupToOtherDayBtn" style="display: none;" onclick="duplicateToOtherDay()">🔁 別日に複製</button>
           <button type="button" class="btn" onclick="closeModal()">キャンセル</button>
-          <button type="button" class="btn" id="dupBtn" style="display: none;" onclick="duplicateEvent()">✨ 複製</button>
           <button type="submit" class="btn">✨ 保存する</button>
         </div>
       </form>
@@ -535,12 +548,10 @@
       if (!dateVal) return "";
       let str = String(dateVal).trim();
       
-      // もしタイムゾーン(Zや+09:00など)を含むフル形式の文字列だった場合
       if (str.includes("T") || str.includes("Z") || str.includes("+")) {
         try {
           const d = new Date(str);
           if (!isNaN(d.getTime())) {
-            // 日本時間(JST)基準で年・月・日を強制的に引き出す
             const y = d.getFullYear();
             const m = String(d.getMonth() + 1).padStart(2, '0');
             const day = String(d.getDate()).padStart(2, '0');
@@ -549,7 +560,6 @@
         } catch(e) {}
       }
       
-      // 単純な YYYY-MM-DD 形式で届いた場合は先頭10文字をそのまま採用
       if (/^\d{4}/.test(str)) {
         return str.substring(0, 10);
       }
@@ -574,24 +584,21 @@
       return toMd(start);
     }
 
-    // 【★重要★ 9時間ズレ解消のための時間クレンジング処理】
+    // 9時間ズレ解消のための時間クレンジング処理
     function cleanTime(timeVal) {
       if (!timeVal) return "";
       let str = String(timeVal).trim();
       
-      // ISO形式（Tを含む形式）で時差情報がある場合、またはGoogle標準時刻として返ってきた場合
       if (str.includes("T")) {
         try {
           const d = new Date(str);
           if (!isNaN(d.getTime())) {
-            // 日本時間（JST = 閲覧ブラウザの環境時間）から時・分を直接取り出す
             const h = String(d.getHours()).padStart(2, '0');
             const m = String(d.getMinutes()).padStart(2, '0');
             return `${h}:${m}`;
           }
         } catch(e) {}
 
-        // フォールバック（パースできない場合は文字列分割）
         const parts = str.split("T");
         if (parts[1]) {
           const timeParts = parts[1].split(":");
@@ -601,13 +608,11 @@
         }
       }
       
-      // すでに "HH:mm:ss" のような文字列なら "HH:mm" にトリミング
       const colonCount = (str.match(/:/g) || []).length;
       if (colonCount === 2) {
         return str.substring(0, 5);
       }
       
-      // 適切なHH:mm文字列であればそのまま返す
       if (/^\d{2}:\d{2}$/.test(str)) {
         return str;
       }
@@ -720,7 +725,6 @@
         const dayEventsContainer = document.createElement("div");
         dayEventsContainer.className = "day-events";
         
-        // 日本時間補正を通した正確な日付でフィルタリング
         const filtered = events.filter(e => {
           if (!e.date) return false;
           const startD = cleanDateStr(e.date);
@@ -849,7 +853,7 @@
       document.getElementById("eventDesc").value = "";
       
       document.getElementById("deleteBtn").style.display = "none";
-      document.getElementById("dupBtn").style.display = "none";
+      document.getElementById("dupToOtherDayBtn").style.display = "none"; // 新規作成時は非表示
       document.getElementById("eventModal").style.display = "flex";
     }
 
@@ -870,7 +874,7 @@
       document.getElementById("eventDesc").value = eventObj.description || "";
 
       document.getElementById("deleteBtn").style.display = "inline-block";
-      document.getElementById("dupBtn").style.display = "inline-block";
+      document.getElementById("dupToOtherDayBtn").style.display = "inline-block"; // 編集時は「別日に複製」ボタンを表示
       document.getElementById("eventModal").style.display = "flex";
     }
 
@@ -890,10 +894,10 @@
       }
     }
 
+    // --- 7. 保存・削除・別日に複製 ---
     async function saveEvent(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
 
-      // 送信前に確実に時間をきれいなテキスト形式（HH:mm）にする
       const startClean = cleanTime(document.getElementById("startTime").value);
       const endClean = cleanTime(document.getElementById("endTime").value);
 
@@ -917,6 +921,43 @@
       await sendToGAS(payload, "保存が完了しました！🎪");
     }
 
+    // ★追加機能: 複製・繰り返し処理
+    async function duplicateToOtherDay() {
+      // 複製先の日付をユーザーにダイアログで確認
+      const inputDate = prompt("複製先（追加したい日）の日付を入力してください。\n例: 2026-07-20", document.getElementById("eventDate").value);
+      if (!inputDate) return;
+
+      // 正しい日付フォーマットか簡易チェック
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(inputDate)) {
+        alert("日付は「YYYY-MM-DD」形式で入力してください。");
+        return;
+      }
+
+      // 複製先の終了日も同じ日付にする
+      const startClean = cleanTime(document.getElementById("startTime").value);
+      const endClean = cleanTime(document.getElementById("endTime").value);
+
+      const duplicatedData = {
+        id: "id_" + Date.now(), // 新しい固有IDを発行
+        date: inputDate,
+        endDate: inputDate,
+        title: document.getElementById("eventTitle").value,
+        color: document.getElementById("eventColor").value,
+        startTime: startClean,
+        endTime: endClean,
+        description: document.getElementById("eventDesc").value
+      };
+
+      const payload = {
+        password: savedPassword,
+        action: "save",
+        event: duplicatedData
+      };
+
+      // 保存処理を実行
+      await sendToGAS(payload, `📅 ${inputDate} に予定を複製しました！🎪`);
+    }
+
     async function deleteEvent() {
       if (!confirm("このイベントを削除してもよろしいですか？")) return;
 
@@ -927,14 +968,6 @@
       };
 
       await sendToGAS(payload, "削除しました。");
-    }
-
-    function duplicateEvent() {
-      document.getElementById("eventId").value = "id_" + Date.now();
-      document.getElementById("modalTitle").innerText = "🎪 CREATE EVENT (DUPLICATED)";
-      document.getElementById("deleteBtn").style.display = "none";
-      document.getElementById("dupBtn").style.display = "none";
-      alert("現在のデータをコピーしました。保存ボタンを押すと新規登録されます。");
     }
 
     async function sendToGAS(payload, successMessage) {

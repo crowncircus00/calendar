@@ -130,19 +130,19 @@
 
     /* 左右の余白をなくし、カレンダーを画面全体に大きく広げるレイアウト */
     .container {
-      max-width: 1650px; /* PCでの表示幅を極限まで広げました */
-      width: 95%;        /* 画面左右の無駄な余白を極限まで減らします */
+      max-width: 1650px; 
+      width: 95%;        
       margin: 20px auto;
       padding: 0 10px;
       display: grid;
-      grid-template-columns: 1.4fr 0.6fr; /* 左側のカレンダーをさらに大きく */
+      grid-template-columns: 1.4fr 0.6fr; 
       gap: 24px;
       flex-grow: 1;
     }
 
     @media (max-width: 1200px) {
       .container {
-        grid-template-columns: 1fr; /* 画面が狭いときは1カラムに自動折りたたみ */
+        grid-template-columns: 1fr; 
       }
     }
 
@@ -153,7 +153,8 @@
       padding: 24px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.6);
       position: relative;
-      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     /* コーナー飾り */
@@ -172,7 +173,7 @@
       color: var(--gold);
       border-bottom: 2px dashed var(--border-color);
       padding-bottom: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -180,11 +181,39 @@
       letter-spacing: 2px;
     }
 
+    /* カテゴリーフィルター（タブスタイル） */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .filter-tab {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 5px 12px;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .filter-tab.active {
+      background-color: var(--gold);
+      color: #0f0a1c;
+      border-color: var(--gold);
+      font-weight: bold;
+    }
+
     /* カレンダーグリッド */
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 10px; /* 隙間を広げて見やすく */
+      gap: 10px; 
       text-align: center;
     }
 
@@ -196,12 +225,12 @@
       border-bottom: 2px solid var(--border-color);
     }
 
-    /* カレンダーの日付セルのサイズを大幅に大きく設定 */
+    /* カレンダーの日付セルのサイズ（横長で見やすく！） */
     .calendar-day {
       background-color: rgba(255,255,255,0.02);
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      min-height: 130px; /* 縦幅を100pxから130pxへと大幅に拡大 */
+      min-height: 130px; 
       padding: 8px;
       display: flex;
       flex-direction: column;
@@ -247,45 +276,51 @@
 
     .day-events {
       width: 100%;
-      margin-top: auto;
+      margin-top: 5px;
       overflow-y: auto;
-      max-height: 90px; /* 拡大に合わせ、予定が入るスペースも拡大 */
+      max-height: 85px; 
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
 
-    /* 帯状の予定表示 */
+    /* 【注目！】カレンダー内の「帯状（背景塗りつぶし）」予定表示 */
     .mini-event {
       font-size: 0.75rem;
       font-weight: bold;
-      padding: 4px 8px;
+      padding: 3px 6px;
       border-radius: 4px;
-      color: #0f0a1c; /* 文字がはっきり読めるようにダークカラー */
+      color: #0f0a1c !important; /* 背景色に対して文字がはっきり読めるようにダークカラーに固定 */
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       text-align: left;
       box-shadow: 0 1px 3px rgba(0,0,0,0.3);
       width: 100%;
+      display: block;
     }
 
     /* イベントリスト */
     .event-list {
-      max-height: 700px;
+      max-height: 600px;
       overflow-y: auto;
       padding-right: 5px;
+      flex-grow: 1;
     }
 
+    /* リストアイテムのシンプル化（余分な枠や余白をスリムに） */
     .list-item {
-      padding: 14px;
+      padding: 10px 12px;
       border-bottom: 1px solid var(--border-color);
       position: relative;
       border-left: 5px solid var(--gold);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       background-color: rgba(255,255,255,0.02);
-      border-radius: 0 8px 8px 0;
+      border-radius: 0 6px 6px 0;
       transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .list-item:hover {
@@ -293,32 +328,27 @@
       transform: translateX(4px);
     }
 
+    .list-item-left {
+      flex: 1;
+      min-width: 0;
+      padding-right: 10px;
+    }
+
     .list-item-title {
       font-weight: bold;
       color: #fff;
-      font-size: 1.05rem;
-      margin-bottom: 6px;
+      font-size: 1rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: calc(100% - 30px);
     }
 
     .list-item-time {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: var(--gold);
       font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .list-item-desc {
-      font-size: 0.88rem;
-      color: var(--text-muted);
-      margin-top: 8px;
-      white-space: pre-wrap;
-      line-height: 1.4;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     /* モーダル */
@@ -408,9 +438,19 @@
     <!-- リストカード -->
     <div class="card">
       <div class="card-title">
-        <span>✨ UPCOMING EVENTS</span>
+        <span>✨ UPCOMING</span>
         <button id="addEventBtn" class="btn" style="display: none;" onclick="openAddModal()">＋ 予定追加</button>
       </div>
+      
+      <!-- カテゴリーフィルター（タブスタイル） -->
+      <div class="filter-bar" id="filterBar">
+        <button class="filter-tab active" onclick="filterCategory('all')">すべて</button>
+        <button class="filter-tab" onclick="filterCategory('#4fc3f7')">🌐 IRIAM</button>
+        <button class="filter-tab" onclick="filterCategory('#ff4d4d')">🎥 YouTube</button>
+        <button class="filter-tab" onclick="filterCategory('#ff8da1')">💌 ご依頼</button>
+        <button class="filter-tab" onclick="filterCategory('#b388ff')">👑 個人予定</button>
+      </div>
+
       <div class="event-list" id="eventList">
         <p style="color: var(--text-muted); text-align: center; padding: 20px;">🎪 予定を賑やかに準備中...</p>
       </div>
@@ -483,6 +523,7 @@
     let events = [];
     let isAdmin = false;
     let savedPassword = ""; 
+    let activeFilter = "all"; // 現在選択中のカテゴリーフィルター
 
     window.onload = function() {
       fetchEvents();
@@ -608,6 +649,7 @@
           if (ev.color === "#ff8da1") icon = "💌";
           if (ev.color === "#b388ff") icon = "👑";
 
+          // 【ご要望】先頭の7文字のみを表示
           const displayTitle = ev.title.length > 7 ? ev.title.substring(0, 7) + ".." : ev.title;
           mEv.innerText = `${icon} ${displayTitle}`;
           dayEventsContainer.appendChild(mEv);
@@ -620,7 +662,8 @@
             openAddModal(dateStr);
           } else if (filtered.length > 0) {
             let details = filtered.map(e => {
-              return `【${e.title}】\n期間: ${e.date} 〜 ${e.endDate || e.date}\n時間: ${e.startTime || '未定'}〜${e.endTime || '未定'}\n詳細: ${e.description || 'なし'}`;
+              const displayTime = e.startTime && e.endTime ? `${e.startTime}〜${e.endTime}` : '未定';
+              return `【${e.title}】\n期間: ${e.date} 〜 ${e.endDate || e.date}\n時間: ${displayTime}\n詳細: ${e.description || 'なし'}`;
             }).join("\n\n");
             alert(details);
           }
@@ -630,48 +673,75 @@
       }
     }
 
-    // --- 4. リスト描画 ---
+    // --- 4. フィルター切り替え ---
+    function filterCategory(colorCode) {
+      activeFilter = colorCode;
+      
+      // ボタンのアクティブ表示切り替え
+      const tabs = document.querySelectorAll(".filter-tab");
+      tabs.forEach(tab => tab.classList.remove("active"));
+      
+      event.target.classList.add("active");
+      
+      renderEventList();
+    }
+
+    // --- 5. リスト描画 ---
     function renderEventList() {
       const list = document.getElementById("eventList");
       list.innerHTML = "";
 
-      const sortedEvents = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
+      // 日付順にソート
+      let filteredEvents = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      if (sortedEvents.length === 0) {
-        list.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">🎪 登録された予定はありません。次の開催をお楽しみに！</p>`;
+      // カテゴリーフィルターを適用
+      if (activeFilter !== "all") {
+        filteredEvents = filteredEvents.filter(ev => ev.color === activeFilter);
+      }
+
+      if (filteredEvents.length === 0) {
+        list.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">🎪 該当する予定はありません。</p>`;
         return;
       }
 
-      sortedEvents.forEach(ev => {
+      filteredEvents.forEach(ev => {
         const item = document.createElement("div");
         item.className = "list-item";
         item.style.borderLeftColor = ev.color || "#b388ff";
 
-        const timeStr = `${ev.startTime || '--:--'} 〜 ${ev.endTime || '--:--'}`;
-        const dateRangeStr = ev.endDate && ev.endDate !== ev.date ? `${ev.date} 〜 ${ev.endDate}` : ev.date;
+        // 時間表示を極めてシンプルにする (未定 or 開始時間〜終了時間)
+        const timeDisplay = ev.startTime && ev.endTime ? `${ev.startTime}〜${ev.endTime}` : '未定';
 
         let icon = "✨";
-        if (ev.color === "#4fc3f7") icon = "🌐 [IRIAM] ";
-        if (ev.color === "#ff4d4d") icon = "🎥 [YouTube] ";
-        if (ev.color === "#ff8da1") icon = "💌 [ご依頼] ";
-        if (ev.color === "#b388ff") icon = "👑 [個人予定] ";
+        if (ev.color === "#4fc3f7") icon = "🌐 ";
+        if (ev.color === "#ff4d4d") icon = "🎥 ";
+        if (ev.color === "#ff8da1") icon = "💌 ";
+        if (ev.color === "#b388ff") icon = "👑 ";
 
         item.innerHTML = `
-          <div class="list-item-title" title="${ev.title}">${icon}${ev.title}</div>
-          <div class="list-item-time">🗓️ ${dateRangeStr} | ⏰ ${timeStr}</div>
-          ${ev.description ? `<div class="list-item-desc">${ev.description}</div>` : ""}
+          <div class="list-item-left">
+            <div class="list-item-title" title="${ev.title}">${icon}${ev.title}</div>
+          </div>
+          <div class="list-item-time">⏰ ${timeDisplay}</div>
         `;
 
         if (isAdmin) {
           item.style.cursor = "pointer";
           item.onclick = () => openEditModal(ev);
+        } else {
+          // 一般閲覧者はタップで詳細（日付や説明）をポップアップ
+          item.style.cursor = "pointer";
+          item.onclick = () => {
+            const dateRangeStr = ev.endDate && ev.endDate !== ev.date ? `${ev.date} 〜 ${ev.endDate}` : ev.date;
+            alert(`【${ev.title}】\n日程: ${dateRangeStr}\n時間: ${timeDisplay}\n詳細: ${ev.description || 'なし'}`);
+          };
         }
 
         list.appendChild(item);
       });
     }
 
-    // --- 5. モーダル制御 ---
+    // --- 6. モーダル制御 ---
     function openAddModal(dateStr = "") {
       const defaultDate = dateStr || new Date().toISOString().split('T')[0];
       
@@ -710,7 +780,7 @@
       document.getElementById("eventModal").style.display = "none";
     }
 
-    // --- 6. 時間フォーマット ---
+    // --- 7. 時間フォーマット ---
     function formatTime(input) {
       let val = input.value.replace(/[^0-9]/g, "");
       if (val.length === 3) val = "0" + val;
@@ -723,7 +793,7 @@
       }
     }
 
-    // --- 7. 保存 ---
+    // --- 8. 保存 ---
     async function saveEvent(e) {
       e.preventDefault();
 
@@ -747,7 +817,7 @@
       await sendToGAS(payload, "保存が完了しました！🎪");
     }
 
-    // --- 8. 削除 ---
+    // --- 9. 削除 ---
     async function deleteEvent() {
       if (!confirm("このイベントを削除してもよろしいですか？")) return;
 
@@ -760,7 +830,7 @@
       await sendToGAS(payload, "削除しました。");
     }
 
-    // --- 9. 複製 ---
+    // --- 10. 複製 ---
     function duplicateEvent() {
       document.getElementById("eventId").value = "id_" + Date.now();
       document.getElementById("modalTitle").innerText = "🎪 CREATE EVENT (DUPLICATED)";
@@ -769,7 +839,7 @@
       alert("現在のデータをコピーしました。保存ボタンを押すと新規登録されます。");
     }
 
-    // --- 10. 通信処理 ---
+    // --- 11. 通信処理 ---
     async function sendToGAS(payload, successMessage) {
       try {
         const response = await fetch(GAS_WEB_APP_URL, {

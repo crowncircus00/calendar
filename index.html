@@ -3,22 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CROWN CIRCUS - Schedule Calendar</title>
+  <title>👑 CROWN CIRCUS 🎪 Schedule Calendar</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
   <style>
     /* ==========================================
        1. THEME & VARIABLES (Circus & Crown)
        ========================================== */
     :root {
-      --bg-color: #0b0c10;
-      --card-bg: #1f1f2e;
-      --gold: #d4af37;
-      --gold-dark: #aa8c2c;
-      --text-color: #f1f1f5;
-      --text-muted: #a0a0b0;
-      --red: #c0392b;
-      --red-hover: #e74c3c;
-      --border-color: #3a3a4f;
+      --bg-color: #0f0a1c; /* 深みのあるロイヤルパープルブラック */
+      --card-bg: #1c1430; /* サーカステントの影をイメージしたダークバイオレット */
+      --gold: #fcd34d; /* 輝くゴールド */
+      --gold-dark: #d97706;
+      --text-color: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: #3b2e5a;
+      
+      /* カテゴリー別カラー */
+      --color-iriam: #4fc3f7;   /* 水色 */
+      --color-youtube: #ff4d4d; /* 赤 */
+      --color-request: #ff8da1; /* ピンク */
+      --color-personal: #b388ff;/* 紫 */
     }
 
     * {
@@ -29,6 +33,9 @@
 
     body {
       background-color: var(--bg-color);
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(179, 136, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(252, 211, 77, 0.1) 0%, transparent 50%);
       color: var(--text-color);
       font-family: 'Noto Serif JP', serif;
       min-height: 100vh;
@@ -37,28 +44,50 @@
     }
 
     /* ==========================================
-       2. STYLES (Header, Layout, Calendar, List)
+       2. CONFIGURATION & APP STATE (JS)
+       ========================================== */
+    <script>
+      // 【必須】GASの「新しいデプロイ」で取得した最新のURLに書き換えてください
+      const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzLB7p_dy9c8WRanffHBi2tzorNdtUqDxw5IeMfjDpBSCrK2tf7ualrdmZ0TewcOm-Zvw/exec";
+    </script>
+  </style>
+  
+  <style>
+    /* ==========================================
+       3. STYLES (Header, Layout, Calendar, List)
        ========================================== */
     header {
-      background: linear-gradient(135deg, #111, #222);
-      border-bottom: 2px solid var(--gold);
-      padding: 20px;
+      background: linear-gradient(180deg, #180933 0%, #0f0a1c 100%);
+      border-bottom: 3px double var(--gold);
+      padding: 25px 20px;
       text-align: center;
       position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    /* サーカステントのガーランド風装飾 */
+    header::after {
+      content: "🎪 🌟 🎪 🌟 🎪 🌟 🎪 🌟 🎪";
+      display: block;
+      font-size: 1.2rem;
+      letter-spacing: 8px;
+      margin-top: 8px;
+      opacity: 0.8;
     }
 
     header h1 {
       font-family: 'Cinzel', serif;
-      font-size: 2.2rem;
+      font-size: 2.5rem;
       color: var(--gold);
-      letter-spacing: 4px;
-      text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+      letter-spacing: 6px;
+      text-shadow: 0 0 15px rgba(252, 211, 77, 0.6), 0 0 2px #fff;
     }
 
     header p {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       color: var(--text-muted);
       margin-top: 5px;
+      letter-spacing: 2px;
     }
 
     .admin-btn-container {
@@ -69,100 +98,123 @@
     }
 
     .btn {
-      background-color: transparent;
-      border: 1px solid var(--gold);
+      background-color: rgba(28, 20, 48, 0.8);
+      border: 1.5px solid var(--gold);
       color: var(--gold);
-      padding: 8px 16px;
-      border-radius: 4px;
+      padding: 8px 18px;
+      border-radius: 20px; /* 丸みを持たせて楽しげな印象に */
       cursor: pointer;
       font-family: inherit;
       font-size: 0.85rem;
+      font-weight: bold;
       transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
 
     .btn:hover {
       background-color: var(--gold);
-      color: var(--bg-color);
-      box-shadow: 0 0 8px var(--gold);
+      color: #0f0a1c;
+      box-shadow: 0 0 12px var(--gold);
+      transform: scale(1.05);
     }
 
     .btn-danger {
-      border-color: var(--red);
-      color: var(--red);
+      border-color: #ff4d4d;
+      color: #ff4d4d;
     }
 
     .btn-danger:hover {
-      background-color: var(--red);
+      background-color: #ff4d4d;
       color: var(--text-color);
-      box-shadow: 0 0 8px var(--red);
+      box-shadow: 0 0 12px #ff4d4d;
     }
 
+    /* 初期状態の美しい見やすい2カラムレイアウト */
     .container {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 30px auto;
       padding: 0 20px;
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
+      grid-template-columns: 1.3fr 0.7fr; /* 左側を少し広めにしてカレンダーを横長に */
       gap: 30px;
       flex-grow: 1;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 1024px) {
       .container {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr; /* タブレット以下では縦に並べる */
       }
     }
 
     .card {
       background-color: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* サーカス風のカードの角飾り */
+    .card::before {
+      content: "✦";
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: var(--gold);
+      font-size: 1rem;
+      opacity: 0.5;
     }
 
     .card-title {
       font-family: 'Cinzel', serif;
       color: var(--gold);
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 10px;
+      border-bottom: 2px dashed var(--border-color);
+      padding-bottom: 12px;
       margin-bottom: 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      font-size: 1.4rem;
+      letter-spacing: 2px;
     }
 
     /* カレンダー表示 */
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
+      gap: 8px;
       text-align: center;
     }
 
     .calendar-header-day {
       color: var(--gold);
       font-weight: bold;
-      padding: 10px 0;
+      padding: 8px 0;
       font-size: 0.9rem;
+      border-bottom: 1px solid var(--border-color);
     }
 
+    /* カレンダーセルを初期の見やすいアスペクト比（横長）に調整 */
     .calendar-day {
       background-color: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 4px;
-      min-height: 90px;
-      padding: 5px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      min-height: 100px; /* 十分な高さを確保 */
+      padding: 6px;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
       position: relative;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: all 0.2s ease;
     }
 
     .calendar-day:hover {
-      background-color: rgba(255,255,255,0.08);
+      background-color: rgba(179, 136, 255, 0.08);
+      border-color: var(--gold);
+      transform: translateY(-2px);
     }
 
     .calendar-day.empty {
@@ -171,73 +223,102 @@
       cursor: default;
     }
 
+    .calendar-day.empty:hover {
+      transform: none;
+    }
+
     .calendar-day .day-num {
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: bold;
       color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .calendar-day.today {
+      background-color: rgba(252, 211, 77, 0.05);
+      border: 1.5px solid var(--gold);
+      box-shadow: inset 0 0 8px rgba(252, 211, 77, 0.2);
     }
 
     .calendar-day.today .day-num {
       color: var(--gold);
-      text-shadow: 0 0 5px var(--gold);
+      text-shadow: 0 0 6px var(--gold);
     }
 
     .day-events {
       width: 100%;
-      margin-top: 5px;
+      margin-top: auto;
       overflow-y: auto;
-      max-height: 60px;
+      max-height: 70px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
     }
 
+    /* 【復活！】カレンダー内の美しい「帯状」の予定表示 */
     .mini-event {
-      font-size: 0.7rem;
-      padding: 2px 4px;
-      margin-bottom: 2px;
-      border-radius: 2px;
-      color: #fff;
+      font-size: 0.72rem;
+      font-weight: bold;
+      padding: 3px 6px;
+      border-radius: 4px;
+      color: #0f0a1c; /* ダーク背景に対して文字をクッキリ読みやすく */
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       text-align: left;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      width: 100%;
     }
 
     /* イベントリスト */
     .event-list {
-      max-height: 500px;
+      max-height: 600px;
       overflow-y: auto;
+      padding-right: 5px;
     }
 
     .list-item {
-      padding: 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 14px;
+      border-bottom: 1px solid var(--border-color);
       position: relative;
-      border-left: 4px solid var(--gold);
-      margin-bottom: 8px;
-      background-color: rgba(255,255,255,0.01);
-      border-radius: 0 4px 4px 0;
+      border-left: 5px solid var(--gold);
+      margin-bottom: 10px;
+      background-color: rgba(255,255,255,0.02);
+      border-radius: 0 8px 8px 0;
+      transition: all 0.2s ease;
+    }
+
+    .list-item:hover {
+      background-color: rgba(255,255,255,0.05);
+      transform: translateX(4px);
     }
 
     .list-item-title {
       font-weight: bold;
       color: #fff;
-      font-size: 1rem;
-      margin-bottom: 4px;
+      font-size: 1.05rem;
+      margin-bottom: 6px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: calc(100% - 40px);
+      max-width: calc(100% - 30px);
     }
 
     .list-item-time {
-      font-size: 0.75rem;
-      color: var(--text-muted);
+      font-size: 0.8rem;
+      color: var(--gold);
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .list-item-desc {
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       color: var(--text-muted);
-      margin-top: 6px;
+      margin-top: 8px;
       white-space: pre-wrap;
+      line-height: 1.4;
     }
 
     /* モーダル */
@@ -246,7 +327,8 @@
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background-color: rgba(0,0,0,0.8);
+      background-color: rgba(15, 10, 28, 0.85);
+      backdrop-filter: blur(5px);
       justify-content: center;
       align-items: center;
       z-index: 1000;
@@ -254,63 +336,64 @@
 
     .modal-content {
       background-color: var(--card-bg);
-      border: 1px solid var(--gold);
-      border-radius: 8px;
+      border: 2px solid var(--gold);
+      border-radius: 12px;
       width: 90%;
       max-width: 500px;
-      padding: 25px;
-      box-shadow: 0 0 20px var(--gold);
+      padding: 30px;
+      box-shadow: 0 0 30px rgba(252, 211, 77, 0.3);
+      position: relative;
     }
 
     .form-group {
-      margin-bottom: 15px;
+      margin-bottom: 18px;
     }
 
     .form-group label {
       display: block;
       font-size: 0.85rem;
       color: var(--gold);
-      margin-bottom: 5px;
+      margin-bottom: 6px;
+      font-weight: bold;
     }
 
     .form-control {
       width: 100%;
-      padding: 10px;
-      background-color: rgba(0,0,0,0.3);
+      padding: 12px;
+      background-color: rgba(0,0,0,0.4);
       border: 1px solid var(--border-color);
-      border-radius: 4px;
+      border-radius: 6px;
       color: var(--text-color);
       font-family: inherit;
+      font-size: 0.95rem;
     }
 
     .form-control:focus {
       border-color: var(--gold);
       outline: none;
+      box-shadow: 0 0 8px rgba(252, 211, 77, 0.3);
     }
 
     .modal-actions {
       display: flex;
       justify-content: flex-end;
-      gap: 10px;
-      margin-top: 20px;
+      gap: 12px;
+      margin-top: 25px;
     }
   </style>
   
-  <!-- ==========================================
-     3. CONFIGURATION & APP STATE (JS)
-     ========================================== -->
   <script>
     // 【必須】GASの「新しいデプロイ」で取得した最新のURL（https://script.google.com/～）をここに貼り付けてください
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzLB7p_dy9c8WRanffHBi2tzorNdtUqDxw5IeMfjDpBSCrK2tf7ualrdmZ0TewcOm-Zvw/exec";
+    const GAS_WEB_APP_URL = "ここに最新のURLを貼り付けます";
   </script>
 </head>
 <body>
 
   <header>
-    <h1>CROWN CIRCUS</h1>
+    <h1>👑 CROWN CIRCUS 🎪</h1>
     <p>Official Schedule Calendar</p>
     <div class="admin-btn-container">
-      <button id="loginBtn" class="btn" onclick="toggleAdminMode()">管理者ログイン</button>
+      <button id="loginBtn" class="btn" onclick="toggleAdminMode()">🔑 管理者ログイン</button>
     </div>
   </header>
 
@@ -318,10 +401,10 @@
     <!-- カレンダーカード -->
     <div class="card">
       <div class="card-title">
-        <span id="calendarTitle">CALENDAR</span>
+        <span id="calendarTitle">🌟 CALENDAR</span>
         <div>
-          <button class="btn" onclick="prevMonth()">&lt; 前月</button>
-          <button class="btn" onclick="nextMonth()">次月 &gt;</button>
+          <button class="btn" onclick="prevMonth()">🎪 前月</button>
+          <button class="btn" onclick="nextMonth()">次月 🎪</button>
         </div>
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
@@ -330,11 +413,11 @@
     <!-- リストカード -->
     <div class="card">
       <div class="card-title">
-        <span>UPCOMING EVENTS</span>
+        <span>✨ UPCOMING EVENTS</span>
         <button id="addEventBtn" class="btn" style="display: none;" onclick="openAddModal()">＋ 予定追加</button>
       </div>
       <div class="event-list" id="eventList">
-        <p style="color: var(--text-muted); text-align: center; padding: 20px;">予定を読み込んでいます...</p>
+        <p style="color: var(--text-muted); text-align: center; padding: 20px;">🎪 予定を賑やかに準備中...</p>
       </div>
     </div>
   </div>
@@ -342,26 +425,38 @@
   <!-- イベント追加・編集モーダル -->
   <div id="eventModal" class="modal">
     <div class="modal-content">
-      <h2 id="modalTitle" style="color: var(--gold); margin-bottom: 20px; font-family: 'Cinzel', serif;">EVENT FORM</h2>
+      <h2 id="modalTitle" style="color: var(--gold); margin-bottom: 20px; font-family: 'Cinzel', serif; text-align: center; letter-spacing: 2px;">🎪 CREATE EVENT</h2>
       <form id="eventForm" onsubmit="saveEvent(event)">
         <input type="hidden" id="eventId">
-        <div class="form-group">
-          <label for="eventDate">日付</label>
-          <input type="date" id="eventDate" class="form-control" required>
+        
+        <!-- 開始日と終了日の期間選択 -->
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="eventDate">開始日</label>
+            <input type="date" id="eventDate" class="form-control" required onchange="syncEndDate(this.value)">
+          </div>
+          <div>
+            <label for="eventEndDate">終了日</label>
+            <input type="date" id="eventEndDate" class="form-control" required>
+          </div>
         </div>
+
         <div class="form-group">
           <label for="eventTitle">イベントタイトル</label>
           <input type="text" id="eventTitle" class="form-control" placeholder="例: クラウン・特別ショー" required maxlength="30">
         </div>
+
+        <!-- 4つの指定カテゴリ（色名は排除） -->
         <div class="form-group">
-          <label for="eventColor">カテゴリ（カラー）</label>
+          <label for="eventColor">カテゴリー</label>
           <select id="eventColor" class="form-control">
-            <option value="#ff4757">ショー開催 (赤)</option>
-            <option value="#2ed573">コラボ企画 (緑)</option>
-            <option value="#ffa502">ショップ物販 (橙)</option>
-            <option value="#1e90ff">その他 (青)</option>
+            <option value="#4fc3f7">🌐 IRIAM</option>
+            <option value="#ff4d4d">🎥 YouTube</option>
+            <option value="#ff8da1">💌 ご依頼</option>
+            <option value="#b388ff">👑 個人予定</option>
           </select>
         </div>
+
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div>
             <label for="startTime">開始時間</label>
@@ -372,15 +467,17 @@
             <input type="text" id="endTime" class="form-control" placeholder="15:00" onblur="formatTime(this)">
           </div>
         </div>
+
         <div class="form-group">
           <label for="eventDesc">詳細内容</label>
           <textarea id="eventDesc" class="form-control" rows="4" placeholder="詳細を入力してください"></textarea>
         </div>
+
         <div class="modal-actions">
-          <button type="button" class="btn btn-danger" id="deleteBtn" style="display: none; margin-right: auto;" onclick="deleteEvent()">削除</button>
+          <button type="button" class="btn btn-danger" id="deleteBtn" style="display: none; margin-right: auto;" onclick="deleteEvent()">🗑️ 削除</button>
           <button type="button" class="btn" onclick="closeModal()">キャンセル</button>
-          <button type="button" class="btn" id="dupBtn" style="display: none;" onclick="duplicateEvent()">複製</button>
-          <button type="submit" class="btn">保存する</button>
+          <button type="button" class="btn" id="dupBtn" style="display: none;" onclick="duplicateEvent()">✨ 複製</button>
+          <button type="submit" class="btn">✨ 保存する</button>
         </div>
       </form>
     </div>
@@ -415,7 +512,7 @@
       if (isAdmin) {
         isAdmin = false;
         savedPassword = "";
-        document.getElementById("loginBtn").innerText = "管理者ログイン";
+        document.getElementById("loginBtn").innerText = "🔑 管理者ログイン";
         document.getElementById("addEventBtn").style.display = "none";
         renderCalendar();
         renderEventList();
@@ -425,12 +522,32 @@
         if (pass) {
           isAdmin = true;
           savedPassword = pass;
-          document.getElementById("loginBtn").innerText = "ログアウト";
+          document.getElementById("loginBtn").innerText = "🚪 ログアウト";
           document.getElementById("addEventBtn").style.display = "block";
           renderCalendar();
           renderEventList();
           alert("管理者としてログインしました。(保存時に検証されます)");
         }
+      }
+    }
+
+    // --- 日付操作用ヘルパー ---
+    function getDatesInRange(startDate, endDate) {
+      const dates = [];
+      let curr = new Date(startDate);
+      const end = new Date(endDate);
+      while (curr <= end) {
+        dates.push(new Date(curr).toISOString().split('T')[0]);
+        curr.setDate(curr.getDate() + 1);
+      }
+      return dates;
+    }
+
+    // 開始日を変更した際、終了日が開始日より前にならないよう自動調整する
+    function syncEndDate(val) {
+      const endDateInput = document.getElementById("eventEndDate");
+      if (!endDateInput.value || endDateInput.value < val) {
+        endDateInput.value = val;
       }
     }
 
@@ -442,7 +559,7 @@
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
 
-      document.getElementById("calendarTitle").innerText = `${year}年 ${month + 1}月`;
+      document.getElementById("calendarTitle").innerText = `🎪 ${year}年 ${month + 1}月 🎪`;
 
       const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
       dayNames.forEach(d => {
@@ -480,12 +597,28 @@
         const dayEventsContainer = document.createElement("div");
         dayEventsContainer.className = "day-events";
         
-        const filtered = events.filter(e => e.date === dateStr);
+        // 期間中（開始日〜終了日）にこの日が含まれているイベントを抽出
+        const filtered = events.filter(e => {
+          if (!e.date) return false;
+          const endD = e.endDate || e.date; // 終了日がなければ開始日と同じ
+          return dateStr >= e.date && dateStr <= endD;
+        });
+
         filtered.forEach(ev => {
           const mEv = document.createElement("div");
           mEv.className = "mini-event";
-          mEv.style.backgroundColor = ev.color || "#1e90ff";
-          mEv.innerText = ev.title.length > 7 ? ev.title.substring(0, 7) + ".." : ev.title;
+          mEv.style.backgroundColor = ev.color || "#b388ff";
+          
+          // カテゴリに合わせた絵文字を戦闘に付与
+          let icon = "✨";
+          if (ev.color === "#4fc3f7") icon = "🌐";
+          if (ev.color === "#ff4d4d") icon = "🎥";
+          if (ev.color === "#ff8da1") icon = "💌";
+          if (ev.color === "#b388ff") icon = "👑";
+
+          // 【ご要望】最初の7文字のみ表示する
+          const displayTitle = ev.title.length > 7 ? ev.title.substring(0, 7) + ".." : ev.title;
+          mEv.innerText = `${icon} ${displayTitle}`;
           dayEventsContainer.appendChild(mEv);
         });
         
@@ -495,7 +628,11 @@
           if (isAdmin) {
             openAddModal(dateStr);
           } else if (filtered.length > 0) {
-            alert(`【${filtered[0].title}】\n時間: ${filtered[0].startTime || '未定'}〜${filtered[0].endTime || '未定'}\n内容: ${filtered[0].description || 'なし'}`);
+            // 一般閲覧者はクリックで直近の予定詳細を表示
+            let details = filtered.map(e => {
+              return `【${e.title}】\n期間: ${e.date} 〜 ${e.endDate || e.date}\n時間: ${e.startTime || '未定'}〜${e.endTime || '未定'}\n詳細: ${e.description || 'なし'}`;
+            }).join("\n\n");
+            alert(details);
           }
         };
 
@@ -511,20 +648,27 @@
       const sortedEvents = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
 
       if (sortedEvents.length === 0) {
-        list.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">登録された予定はありません。</p>`;
+        list.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">🎪 登録された予定はありません。次の開催をお楽しみに！</p>`;
         return;
       }
 
       sortedEvents.forEach(ev => {
         const item = document.createElement("div");
         item.className = "list-item";
-        item.style.borderLeftColor = ev.color || "#1e90ff";
+        item.style.borderLeftColor = ev.color || "#b388ff";
 
         const timeStr = `${ev.startTime || '--:--'} 〜 ${ev.endTime || '--:--'}`;
+        const dateRangeStr = ev.endDate && ev.endDate !== ev.date ? `${ev.date} 〜 ${ev.endDate}` : ev.date;
+
+        let icon = "✨";
+        if (ev.color === "#4fc3f7") icon = "🌐 [IRIAM] ";
+        if (ev.color === "#ff4d4d") icon = "🎥 [YouTube] ";
+        if (ev.color === "#ff8da1") icon = "💌 [ご依頼] ";
+        if (ev.color === "#b388ff") icon = "👑 [個人予定] ";
 
         item.innerHTML = `
-          <div class="list-item-title" title="${ev.title}">${ev.title}</div>
-          <div class="list-item-time">${ev.date} | ${timeStr}</div>
+          <div class="list-item-title" title="${ev.title}">${icon}${ev.title}</div>
+          <div class="list-item-time">🗓️ ${dateRangeStr} | ⏰ ${timeStr}</div>
           ${ev.description ? `<div class="list-item-desc">${ev.description}</div>` : ""}
         `;
 
@@ -539,11 +683,14 @@
 
     // --- 5. モーダル制御 ---
     function openAddModal(dateStr = "") {
-      document.getElementById("modalTitle").innerText = "CREATE EVENT";
+      const defaultDate = dateStr || new Date().toISOString().split('T')[0];
+      
+      document.getElementById("modalTitle").innerText = "🎪 CREATE EVENT";
       document.getElementById("eventId").value = "id_" + Date.now();
-      document.getElementById("eventDate").value = dateStr || new Date().toISOString().split('T')[0];
+      document.getElementById("eventDate").value = defaultDate;
+      document.getElementById("eventEndDate").value = defaultDate; // デフォルトは当日から当日
       document.getElementById("eventTitle").value = "";
-      document.getElementById("eventColor").value = "#ff4757";
+      document.getElementById("eventColor").value = "#4fc3f7";
       document.getElementById("startTime").value = "";
       document.getElementById("endTime").value = "";
       document.getElementById("eventDesc").value = "";
@@ -554,11 +701,12 @@
     }
 
     function openEditModal(eventObj) {
-      document.getElementById("modalTitle").innerText = "EDIT EVENT";
+      document.getElementById("modalTitle").innerText = "🎪 EDIT EVENT";
       document.getElementById("eventId").value = eventObj.id;
       document.getElementById("eventDate").value = eventObj.date;
+      document.getElementById("eventEndDate").value = eventObj.endDate || eventObj.date;
       document.getElementById("eventTitle").value = eventObj.title;
-      document.getElementById("eventColor").value = eventObj.color || "#ff4757";
+      document.getElementById("eventColor").value = eventObj.color || "#4fc3f7";
       document.getElementById("startTime").value = eventObj.startTime || "";
       document.getElementById("endTime").value = eventObj.endTime || "";
       document.getElementById("eventDesc").value = eventObj.description || "";
@@ -592,6 +740,7 @@
       const eventData = {
         id: document.getElementById("eventId").value,
         date: document.getElementById("eventDate").value,
+        endDate: document.getElementById("eventEndDate").value, // 終了日を保存データに追加
         title: document.getElementById("eventTitle").value,
         color: document.getElementById("eventColor").value,
         startTime: document.getElementById("startTime").value,
@@ -605,7 +754,7 @@
         event: eventData
       };
 
-      await sendToGAS(payload, "保存が完了しました！");
+      await sendToGAS(payload, "保存が完了しました！🎪");
     }
 
     // --- 8. 削除 ---
@@ -624,7 +773,7 @@
     // --- 9. 複製 ---
     function duplicateEvent() {
       document.getElementById("eventId").value = "id_" + Date.now();
-      document.getElementById("modalTitle").innerText = "CREATE EVENT (DUPLICATED)";
+      document.getElementById("modalTitle").innerText = "🎪 CREATE EVENT (DUPLICATED)";
       document.getElementById("deleteBtn").style.display = "none";
       document.getElementById("dupBtn").style.display = "none";
       alert("現在のデータをコピーしました。保存ボタンを押すと新規登録されます。");

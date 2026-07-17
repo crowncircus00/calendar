@@ -236,7 +236,7 @@
       background-color: rgba(255,255,255,0.02);
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      min-height: 130px; 
+      min-height: 140px; 
       padding: 8px;
       display: flex;
       flex-direction: column;
@@ -244,6 +244,7 @@
       position: relative;
       cursor: pointer;
       transition: all 0.2s ease;
+      overflow: hidden; /* セルがはみ出さないようにガード */
     }
 
     .calendar-day:hover {
@@ -266,7 +267,7 @@
       font-size: 1rem;
       font-weight: bold;
       color: var(--text-muted);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .calendar-day.today {
@@ -284,20 +285,20 @@
       width: 100%;
       margin-top: 5px;
       overflow-y: auto;
-      max-height: 85px; 
+      max-height: 95px; 
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
 
     .mini-event {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: bold;
       padding: 3px 6px;
       border-radius: 4px;
       color: #0f0a1c !important; 
       overflow: hidden;
-      text-overflow: ellipsis;
+      text-overflow: ellipsis; /* 長い文字が枠を崩さないよう...にする */
       white-space: nowrap;
       text-align: left;
       box-shadow: 0 1px 3px rgba(0,0,0,0.3);
@@ -324,6 +325,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      overflow: hidden; /* リスト項目のはみ出しを防ぐ */
     }
 
     .list-item:hover {
@@ -333,8 +335,8 @@
 
     .list-item-left {
       flex: 1;
-      min-width: 0;
-      padding-right: 10px;
+      min-width: 0; /* フレックスアイテムの縮小を有効にし、タイトルのはみ出しを防ぐ */
+      padding-right: 15px;
     }
 
     .list-item-title {
@@ -343,7 +345,7 @@
       font-size: 1rem;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis;
+      text-overflow: ellipsis; /* UPCOMING内の長いタイトルを...で省略 */
     }
 
     .list-item-right-info {
@@ -524,7 +526,7 @@
 
         <div class="modal-actions">
           <button type="button" class="btn btn-danger" id="deleteBtn" style="display: none; margin-right: auto;" onclick="deleteEvent()">🗑️ 削除</button>
-          <button type="button" class="btn btn-secondary" id="dupToOtherDayBtn" style="display: none;" onclick="duplicateToOtherDay()">🔁 別日に複製</button>
+          <button type="button" class="btn btn-secondary" id="dupToOtherDayBtn" style="display: none;" onclick="openDuplicateMenu()">🔁 繰り返し複製</button>
           <button type="button" class="btn" onclick="closeModal()">キャンセル</button>
           <button type="submit" class="btn">✨ 保存する</button>
         </div>
@@ -634,6 +636,24 @@
       return "未定";
     }
 
+    // ジャンルコードから名前を返すヘルパー
+    function getGenreName(colorCode) {
+      switch(colorCode) {
+        case "#4fc3f7": return "🌐 IRIAM";
+        case "#ff4d4d": return "🎥 YouTube";
+        case "#ff8da1": return "💌 ご依頼";
+        case "#b388ff": return "👑 個人予定";
+        default: return "✨ その他";
+      }
+    }
+
+    // 時間順（昇順）にソートする並び替え関数
+    function sortByTime(a, b) {
+      const timeA = cleanTime(a.startTime) || "99:99";
+      const timeB = cleanTime(b.startTime) || "99:99";
+      return timeA.localeCompare(timeB);
+    }
+
     // --- 1. データ取得 (GET) ---
     async function fetchEvents() {
       try {
@@ -725,26 +745,32 @@
         const dayEventsContainer = document.createElement("div");
         dayEventsContainer.className = "day-events";
         
-        const filtered = events.filter(e => {
+        // 1. カテゴリーフィルター & 日付の一致でフィルタリング
+        let filtered = events.filter(e => {
           if (!e.date) return false;
           const startD = cleanDateStr(e.date);
           const endD = cleanDateStr(e.endDate || e.date);
-          return dateStr >= startD && dateStr <= endD;
+          const isInRange = dateStr >= startD && dateStr <= endD;
+          
+          if (activeFilter === "all") {
+            return isInRange;
+          } else {
+            return isInRange && e.color === activeFilter;
+          }
         });
 
+        // 2. 帯を「時間通りに並び替え」
+        filtered.sort(sortByTime);
+
+        // 3. 描画（絵文字なし・色のみで判別・開始時間を表示）
         filtered.forEach(ev => {
           const mEv = document.createElement("div");
           mEv.className = "mini-event";
           mEv.style.backgroundColor = ev.color || "#b388ff";
           
-          let icon = "✨";
-          if (ev.color === "#4fc3f7") icon = "🌐";
-          if (ev.color === "#ff4d4d") icon = "🎥";
-          if (ev.color === "#ff8da1") icon = "💌";
-          if (ev.color === "#b388ff") icon = "👑";
-
-          const displayTitle = ev.title.length > 7 ? ev.title.substring(0, 7) + ".." : ev.title;
-          mEv.innerText = `${icon} ${displayTitle}`;
+          const cleanStart = cleanTime(ev.startTime);
+          const timePrefix = cleanStart ? `${cleanStart}〜` : "";
+          mEv.innerText = `${timePrefix}${ev.title}`;
           dayEventsContainer.appendChild(mEv);
         });
         
@@ -754,12 +780,12 @@
           if (isAdmin) {
             openAddModal(dateStr);
           } else if (filtered.length > 0) {
+            // 一般ユーザー向けのポップアップ表示。指定に従い「期間欄」を削除し構成。
             let details = filtered.map(e => {
               const displayTime = getTimeRangeString(e.startTime, e.endTime);
-              const cleanD = cleanDateStr(e.date);
-              const cleanEndD = cleanDateStr(e.endDate || e.date);
-              return `【${e.title}】\n期間: ${cleanD} 〜 ${cleanEndD}\n時間: ${displayTime}\n詳細: ${e.description || 'なし'}`;
-            }).join("\n\n");
+              const genre = getGenreName(e.color);
+              return `【ジャンル】: ${genre}\n【時間】: ${displayTime}\n【タイトル】: ${e.title}\n【詳細】: ${e.description || 'なし'}`;
+            }).join("\n\n✨🎪✨\n\n");
             alert(details);
           }
         };
@@ -774,6 +800,9 @@
       const tabs = document.querySelectorAll(".filter-tab");
       tabs.forEach(tab => tab.classList.remove("active"));
       event.target.classList.add("active");
+      
+      // UPCOMINGリストだけでなく、カレンダーも同期して絞り込み
+      renderCalendar();
       renderEventList();
     }
 
@@ -782,15 +811,20 @@
       const list = document.getElementById("eventList");
       list.innerHTML = "";
 
-      let filteredEvents = [...events].sort((a, b) => {
-        const strA = cleanDateStr(a.date);
-        const strB = cleanDateStr(b.date);
-        return strA.localeCompare(strB);
+      let filteredEvents = events.filter(ev => {
+        if (activeFilter === "all") return true;
+        return ev.color === activeFilter;
       });
 
-      if (activeFilter !== "all") {
-        filteredEvents = filteredEvents.filter(ev => ev.color === activeFilter);
-      }
+      // 1. 日付順、2. 開始時間順でソート
+      filteredEvents.sort((a, b) => {
+        const strA = cleanDateStr(a.date);
+        const strB = cleanDateStr(b.date);
+        if (strA !== strB) {
+          return strA.localeCompare(strB);
+        }
+        return sortByTime(a, b);
+      });
 
       if (filteredEvents.length === 0) {
         list.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">🎪 該当する予定はありません。</p>`;
@@ -811,6 +845,7 @@
         if (ev.color === "#ff8da1") icon = "💌 ";
         if (ev.color === "#b388ff") icon = "👑 ";
 
+        // はみ出ない構造にして、CSS ellipsis(...) でカット
         item.innerHTML = `
           <div class="list-item-left">
             <div class="list-item-title" title="${ev.title}">${icon}${ev.title}</div>
@@ -827,10 +862,9 @@
         } else {
           item.style.cursor = "pointer";
           item.onclick = () => {
-            const cleanD = cleanDateStr(ev.date);
-            const cleanEndD = cleanDateStr(ev.endDate || ev.date);
-            const dateRangeStr = cleanEndD && cleanEndD !== cleanD ? `${cleanD} 〜 ${cleanEndD}` : cleanD;
-            alert(`【${ev.title}】\n日程: ${dateRangeStr}\n時間: ${timeDisplay}\n詳細: ${ev.description || 'なし'}`);
+            const displayTime = getTimeRangeString(ev.startTime, ev.endTime);
+            const genre = getGenreName(ev.color);
+            alert(`【ジャンル】: ${genre}\n【時間】: ${displayTime}\n【タイトル】: ${ev.title}\n【詳細】: ${ev.description || 'なし'}`);
           };
         }
 
@@ -874,7 +908,7 @@
       document.getElementById("eventDesc").value = eventObj.description || "";
 
       document.getElementById("deleteBtn").style.display = "inline-block";
-      document.getElementById("dupToOtherDayBtn").style.display = "inline-block"; // 編集時は「別日に複製」ボタンを表示
+      document.getElementById("dupToOtherDayBtn").style.display = "inline-block"; // 編集時は表示
       document.getElementById("eventModal").style.display = "flex";
     }
 
@@ -894,7 +928,7 @@
       }
     }
 
-    // --- 7. 保存・削除・別日に複製 ---
+    // --- 7. 保存・削除・新繰り返し機能 ---
     async function saveEvent(e) {
       if (e) e.preventDefault();
 
@@ -921,41 +955,160 @@
       await sendToGAS(payload, "保存が完了しました！🎪");
     }
 
-    // ★追加機能: 複製・繰り返し処理
-    async function duplicateToOtherDay() {
-      // 複製先の日付をユーザーにダイアログで確認
-      const inputDate = prompt("複製先（追加したい日）の日付を入力してください。\n例: 2026-07-20", document.getElementById("eventDate").value);
-      if (!inputDate) return;
+    // ★★★ 超進化：選べる繰り返し複製メニュー機能 ★★★
+    async function openDuplicateMenu() {
+      const baseDateStr = document.getElementById("eventDate").value;
+      if (!baseDateStr) return;
+      
+      const baseDate = new Date(baseDateStr);
+      const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+      const dayName = dayNames[baseDate.getDay()];
 
-      // 正しい日付フォーマットか簡易チェック
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(inputDate)) {
-        alert("日付は「YYYY-MM-DD」形式で入力してください。");
+      const menuMsg = `🤖 繰り返し方法を選択してください:
+----------------------------------------------
+1 : 別日を指定して1件複製
+2 : 毎週 [${dayName}曜日] 繰り返し
+3 : この後7日間連続繰り返し
+4 : カスタム間隔繰り返し
+----------------------------------------------
+※ 終了するにはキャンセルを押してください。`;
+
+      const choice = prompt(menuMsg, "1");
+      if (!choice) return;
+
+      const title = document.getElementById("eventTitle").value;
+      const color = document.getElementById("eventColor").value;
+      const startTime = cleanTime(document.getElementById("startTime").value);
+      const endTime = cleanTime(document.getElementById("endTime").value);
+      const description = document.getElementById("eventDesc").value;
+
+      let duplicatePayloads = [];
+
+      // --- パターン1 : 特定の別日指定 ---
+      if (choice === "1") {
+        const targetDate = prompt("複製先の日付を入力してください。\n例: 2026-07-20", baseDateStr);
+        if (!targetDate) return;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+          alert("日付は「YYYY-MM-DD」形式で入力してください。");
+          return;
+        }
+        duplicatePayloads.push({
+          id: "id_" + Date.now() + "_0",
+          date: targetDate,
+          endDate: targetDate,
+          title, color, startTime, endTime, description
+        });
+
+      // --- パターン2 : 毎週同じ曜日 ---
+      } else if (choice === "2") {
+        const countInput = prompt(`毎週 [${dayName}曜日] に何回繰り返しますか？\n(半角数値で入力: 最大20)`, "4");
+        const count = parseInt(countInput, 10);
+        if (isNaN(count) || count <= 0 || count > 20) {
+          alert("1から20までの正しい数値を入力してください。");
+          return;
+        }
+
+        for (let i = 1; i <= count; i++) {
+          let nextDate = new Date(baseDate);
+          nextDate.setDate(baseDate.getDate() + (i * 7));
+          const dateStr = nextDate.toISOString().split("T")[0];
+          duplicatePayloads.push({
+            id: `id_${Date.now()}_w_${i}`,
+            date: dateStr,
+            endDate: dateStr,
+            title, color, startTime, endTime, description
+          });
+        }
+
+      // --- パターン3 : この後7日間連続 ---
+      } else if (choice === "3") {
+        if (!confirm("翌日から連続7日間の予定を複製します。よろしいですか？")) return;
+        for (let i = 1; i <= 7; i++) {
+          let nextDate = new Date(baseDate);
+          nextDate.setDate(baseDate.getDate() + i);
+          const dateStr = nextDate.toISOString().split("T")[0];
+          duplicatePayloads.push({
+            id: `id_${Date.now()}_7d_${i}`,
+            date: dateStr,
+            endDate: dateStr,
+            title, color, startTime, endTime, description
+          });
+        }
+
+      // --- パターン4 : カスタム繰り返し ---
+      } else if (choice === "4") {
+        const unitChoice = prompt("繰り返しの単位を選択してください:\nd : 日単位\nw : 週単位\nm : 月単位", "d");
+        if (!unitChoice || !["d", "w", "m"].includes(unitChoice.toLowerCase())) {
+          alert("d, w, m のいずれかで入力してください。");
+          return;
+        }
+
+        const intervalInput = prompt("何単位ごとですか？（例: 3日おきなら「3」）", "2");
+        const interval = parseInt(intervalInput, 10);
+        if (isNaN(interval) || interval <= 0) {
+          alert("有効な数値（1以上）を入力してください。");
+          return;
+        }
+
+        const countInput = prompt("繰り返し回数は何回ですか？(最大20)", "5");
+        const count = parseInt(countInput, 10);
+        if (isNaN(count) || count <= 0 || count > 20) {
+          alert("1から20までの正しい数値を入力してください。");
+          return;
+        }
+
+        const mode = unitChoice.toLowerCase();
+        for (let i = 1; i <= count; i++) {
+          let nextDate = new Date(baseDate);
+          if (mode === "d") {
+            nextDate.setDate(baseDate.getDate() + (i * interval));
+          } else if (mode === "w") {
+            nextDate.setDate(baseDate.getDate() + (i * interval * 7));
+          } else if (mode === "m") {
+            nextDate.setMonth(baseDate.getMonth() + (i * interval));
+          }
+          const dateStr = nextDate.toISOString().split("T")[0];
+          duplicatePayloads.push({
+            id: `id_${Date.now()}_custom_${i}`,
+            date: dateStr,
+            endDate: dateStr,
+            title, color, startTime, endTime, description
+          });
+        }
+      } else {
+        alert("無効な選択肢です。");
         return;
       }
 
-      // 複製先の終了日も同じ日付にする
-      const startClean = cleanTime(document.getElementById("startTime").value);
-      const endClean = cleanTime(document.getElementById("endTime").value);
+      // 一括登録の処理を順次実行
+      if (duplicatePayloads.length > 0) {
+        let successCount = 0;
+        alert(`これより計 ${duplicatePayloads.length} 件の繰り返し保存処理をバックグラウンドで開始します。\n連続処理のため、しばらくお待ちください...`);
+        
+        for (const targetEvent of duplicatePayloads) {
+          const payload = {
+            password: savedPassword,
+            action: "save",
+            event: targetEvent
+          };
+          try {
+            const res = await fetch(GAS_WEB_APP_URL, {
+              method: "POST",
+              body: JSON.stringify(payload)
+            });
+            const resJson = await res.json();
+            if (resJson.status === "success") {
+              successCount++;
+            }
+          } catch (err) {
+            console.error("個別保存失敗: ", err);
+          }
+        }
 
-      const duplicatedData = {
-        id: "id_" + Date.now(), // 新しい固有IDを発行
-        date: inputDate,
-        endDate: inputDate,
-        title: document.getElementById("eventTitle").value,
-        color: document.getElementById("eventColor").value,
-        startTime: startClean,
-        endTime: endClean,
-        description: document.getElementById("eventDesc").value
-      };
-
-      const payload = {
-        password: savedPassword,
-        action: "save",
-        event: duplicatedData
-      };
-
-      // 保存処理を実行
-      await sendToGAS(payload, `📅 ${inputDate} に予定を複製しました！🎪`);
+        alert(`🔁 繰り返し登録が正常に終了しました！\n（成功: ${successCount} 件 / ${duplicatePayloads.length} 件）`);
+        closeModal();
+        fetchEvents();
+      }
     }
 
     async function deleteEvent() {

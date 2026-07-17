@@ -530,12 +530,26 @@
       fetchEvents();
     };
 
-    // 【最重要】時差の影響を100%排除して純粋な YYYY-MM-DD 文字列を抽出する関数
+    // 【時差による1日ズレを完全解消する処理】
     function cleanDateStr(dateVal) {
       if (!dateVal) return "";
       let str = String(dateVal).trim();
       
-      // 最初が数字4桁から始まっている場合、先頭10文字(YYYY-MM-DD)だけを強制的に切り出す
+      // もしタイムゾーン(Zや+09:00など)を含むフル形式の文字列だった場合
+      if (str.includes("T") || str.includes("Z") || str.includes("+")) {
+        try {
+          const d = new Date(str);
+          if (!isNaN(d.getTime())) {
+            // 日本時間(JST)基準で年・月・日を強制的に引き出す
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+          }
+        } catch(e) {}
+      }
+      
+      // 単純な YYYY-MM-DD 形式で届いた場合は先頭10文字をそのまま採用
       if (/^\d{4}/.test(str)) {
         return str.substring(0, 10);
       }
@@ -688,7 +702,7 @@
         const dayEventsContainer = document.createElement("div");
         dayEventsContainer.className = "day-events";
         
-        // 【最重要修正】Dateオブジェクト化による時差ブレを完全に防ぎ、10文字の純粋な文字列同士で比較
+        // 日本時間補正を通した正確な日付でフィルタリング
         const filtered = events.filter(e => {
           if (!e.date) return false;
           const startD = cleanDateStr(e.date);

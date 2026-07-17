@@ -334,7 +334,6 @@
       text-overflow: ellipsis;
     }
 
-    /* 日付と時間の表示エリア */
     .list-item-right-info {
       display: flex;
       flex-direction: column;
@@ -531,24 +530,27 @@
       fetchEvents();
     };
 
-    // --- 安全な日付抽出ヘルパー (タイムゾーンズレの完全防止) ---
+    // 【最重要】時差の影響を100%排除して純粋な YYYY-MM-DD 文字列を抽出する関数
     function cleanDateStr(dateVal) {
       if (!dateVal) return "";
       let str = String(dateVal).trim();
-      if (str.includes("T")) {
-        return str.split("T")[0]; // YYYY-MM-DD だけを直接抜く
+      
+      // 最初が数字4桁から始まっている場合、先頭10文字(YYYY-MM-DD)だけを強制的に切り出す
+      if (/^\d{4}/.test(str)) {
+        return str.substring(0, 10);
       }
       return str;
     }
 
-    // --- 日付の「月/日」表記への変換ヘルパー ---
+    // 表示用の日付文字列 (M/D) に安全に変換する関数
     function formatToShortDate(dateVal, endDateVal) {
       const start = cleanDateStr(dateVal);
       const end = cleanDateStr(endDateVal || dateVal);
       
       const toMd = (s) => {
+        if (!s) return "";
         const parts = s.split("-");
-        if(parts.length === 3) return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+        if(parts.length === 3) return `${parseInt(parts[1], 10)}/${parseInt(parts[2], 10)}`;
         return s;
       };
 
@@ -558,7 +560,7 @@
       return toMd(start);
     }
 
-    // --- 時間形式クレンジング ---
+    // 時間クレンジング
     function cleanTime(timeVal) {
       if (!timeVal) return "";
       let str = String(timeVal).trim();
@@ -605,7 +607,7 @@
         renderEventList();
       } catch (err) {
         console.error(err);
-        alert("データの読み込みに失敗しました。GASのデプロイURLが正しいかご確認ください。");
+        alert("データの読み込みに失敗しました。");
       }
     }
 
@@ -686,7 +688,7 @@
         const dayEventsContainer = document.createElement("div");
         dayEventsContainer.className = "day-events";
         
-        // 【修正ポイント】文字列ベースで安全に日付期間を判定
+        // 【最重要修正】Dateオブジェクト化による時差ブレを完全に防ぎ、10文字の純粋な文字列同士で比較
         const filtered = events.filter(e => {
           if (!e.date) return false;
           const startD = cleanDateStr(e.date);
@@ -765,7 +767,6 @@
         item.style.borderLeftColor = ev.color || "#b388ff";
 
         const timeDisplay = getTimeRangeString(ev.startTime, ev.endTime);
-        // 【ご要望】日付（月/日）を生成
         const dateDisplay = formatToShortDate(ev.date, ev.endDate);
 
         let icon = "✨";

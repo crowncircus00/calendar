@@ -17,7 +17,7 @@
   <style>
     /* ==========================================
        2. THEME & VARIABLES (Circus & Crown)
-       ========================================== */
+       ========================================== --> */
     :root {
       --bg-color: #0f0a1c; 
       --card-bg: #1c1430; 
@@ -574,12 +574,24 @@
       return toMd(start);
     }
 
-    // 時間クレンジング
+    // 【★重要★ 9時間ズレ解消のための時間クレンジング処理】
     function cleanTime(timeVal) {
       if (!timeVal) return "";
       let str = String(timeVal).trim();
       
+      // ISO形式（Tを含む形式）で時差情報がある場合、またはGoogle標準時刻として返ってきた場合
       if (str.includes("T")) {
+        try {
+          const d = new Date(str);
+          if (!isNaN(d.getTime())) {
+            // 日本時間（JST = 閲覧ブラウザの環境時間）から時・分を直接取り出す
+            const h = String(d.getHours()).padStart(2, '0');
+            const m = String(d.getMinutes()).padStart(2, '0');
+            return `${h}:${m}`;
+          }
+        } catch(e) {}
+
+        // フォールバック（パースできない場合は文字列分割）
         const parts = str.split("T");
         if (parts[1]) {
           const timeParts = parts[1].split(":");
@@ -589,9 +601,15 @@
         }
       }
       
+      // すでに "HH:mm:ss" のような文字列なら "HH:mm" にトリミング
       const colonCount = (str.match(/:/g) || []).length;
       if (colonCount === 2) {
         return str.substring(0, 5);
+      }
+      
+      // 適切なHH:mm文字列であればそのまま返す
+      if (/^\d{2}:\d{2}$/.test(str)) {
+        return str;
       }
       
       return str;
@@ -875,14 +893,18 @@
     async function saveEvent(e) {
       e.preventDefault();
 
+      // 送信前に確実に時間をきれいなテキスト形式（HH:mm）にする
+      const startClean = cleanTime(document.getElementById("startTime").value);
+      const endClean = cleanTime(document.getElementById("endTime").value);
+
       const eventData = {
         id: document.getElementById("eventId").value,
         date: document.getElementById("eventDate").value,
         endDate: document.getElementById("eventEndDate").value,
         title: document.getElementById("eventTitle").value,
         color: document.getElementById("eventColor").value,
-        startTime: document.getElementById("startTime").value,
-        endTime: document.getElementById("endTime").value,
+        startTime: startClean,
+        endTime: endClean,
         description: document.getElementById("eventDesc").value
       };
 

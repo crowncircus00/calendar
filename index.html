@@ -5,9 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>👑 CROWN CIRCUS 🎪 Schedule Calendar</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+  
+  <!-- ==========================================
+     1. CONFIGURATION & APP STATE (JS)
+     ========================================== -->
+  <script>
+    // 【必須】GASの「新しいデプロイ」で取得した最新のURL（https://script.google.com/～）をここに貼り付けてください
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzLB7p_dy9c8WRanffHBi2tzorNdtUqDxw5IeMfjDpBSCrK2tf7ualrdmZ0TewcOm-Zvw/exec";
+  </script>
+
   <style>
     /* ==========================================
-       1. THEME & VARIABLES (Circus & Crown)
+       2. THEME & VARIABLES (Circus & Crown)
        ========================================== */
     :root {
       --bg-color: #0f0a1c; /* 深みのあるロイヤルパープルブラック */
@@ -43,16 +52,6 @@
       flex-direction: column;
     }
 
-    /* ==========================================
-       2. CONFIGURATION & APP STATE (JS)
-       ========================================== */
-    <script>
-      // 【必須】GASの「新しいデプロイ」で取得した最新のURLに書き換えてください
-      const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzLB7p_dy9c8WRanffHBi2tzorNdtUqDxw5IeMfjDpBSCrK2tf7ualrdmZ0TewcOm-Zvw/exec";
-    </script>
-  </style>
-  
-  <style>
     /* ==========================================
        3. STYLES (Header, Layout, Calendar, List)
        ========================================== */
@@ -102,7 +101,7 @@
       border: 1.5px solid var(--gold);
       color: var(--gold);
       padding: 8px 18px;
-      border-radius: 20px; /* 丸みを持たせて楽しげな印象に */
+      border-radius: 20px;
       cursor: pointer;
       font-family: inherit;
       font-size: 0.85rem;
@@ -129,20 +128,21 @@
       box-shadow: 0 0 12px #ff4d4d;
     }
 
-    /* 初期状態の美しい見やすい2カラムレイアウト */
+    /* 左右の余白をなくし、カレンダーを画面全体に大きく広げるレイアウト */
     .container {
-      max-width: 1400px;
-      margin: 30px auto;
-      padding: 0 20px;
+      max-width: 1650px; /* PCでの表示幅を極限まで広げました */
+      width: 95%;        /* 画面左右の無駄な余白を極限まで減らします */
+      margin: 20px auto;
+      padding: 0 10px;
       display: grid;
-      grid-template-columns: 1.3fr 0.7fr; /* 左側を少し広めにしてカレンダーを横長に */
-      gap: 30px;
+      grid-template-columns: 1.4fr 0.6fr; /* 左側のカレンダーをさらに大きく */
+      gap: 24px;
       flex-grow: 1;
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 1200px) {
       .container {
-        grid-template-columns: 1fr; /* タブレット以下では縦に並べる */
+        grid-template-columns: 1fr; /* 画面が狭いときは1カラムに自動折りたたみ */
       }
     }
 
@@ -156,7 +156,7 @@
       overflow: hidden;
     }
 
-    /* サーカス風のカードの角飾り */
+    /* コーナー飾り */
     .card::before {
       content: "✦";
       position: absolute;
@@ -180,11 +180,11 @@
       letter-spacing: 2px;
     }
 
-    /* カレンダー表示 */
+    /* カレンダーグリッド */
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
+      gap: 10px; /* 隙間を広げて見やすく */
       text-align: center;
     }
 
@@ -192,17 +192,17 @@
       color: var(--gold);
       font-weight: bold;
       padding: 8px 0;
-      font-size: 0.9rem;
-      border-bottom: 1px solid var(--border-color);
+      font-size: 1rem;
+      border-bottom: 2px solid var(--border-color);
     }
 
-    /* カレンダーセルを初期の見やすいアスペクト比（横長）に調整 */
+    /* カレンダーの日付セルのサイズを大幅に大きく設定 */
     .calendar-day {
       background-color: rgba(255,255,255,0.02);
       border: 1px solid var(--border-color);
-      border-radius: 6px;
-      min-height: 100px; /* 十分な高さを確保 */
-      padding: 6px;
+      border-radius: 8px;
+      min-height: 130px; /* 縦幅を100pxから130pxへと大幅に拡大 */
+      padding: 8px;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -228,16 +228,16 @@
     }
 
     .calendar-day .day-num {
-      font-size: 0.9rem;
+      font-size: 1rem;
       font-weight: bold;
       color: var(--text-muted);
-      margin-bottom: 4px;
+      margin-bottom: 8px;
     }
 
     .calendar-day.today {
       background-color: rgba(252, 211, 77, 0.05);
-      border: 1.5px solid var(--gold);
-      box-shadow: inset 0 0 8px rgba(252, 211, 77, 0.2);
+      border: 2px solid var(--gold);
+      box-shadow: inset 0 0 10px rgba(252, 211, 77, 0.2);
     }
 
     .calendar-day.today .day-num {
@@ -249,19 +249,19 @@
       width: 100%;
       margin-top: auto;
       overflow-y: auto;
-      max-height: 70px;
+      max-height: 90px; /* 拡大に合わせ、予定が入るスペースも拡大 */
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
     }
 
-    /* 【復活！】カレンダー内の美しい「帯状」の予定表示 */
+    /* 帯状の予定表示 */
     .mini-event {
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: bold;
-      padding: 3px 6px;
+      padding: 4px 8px;
       border-radius: 4px;
-      color: #0f0a1c; /* ダーク背景に対して文字をクッキリ読みやすく */
+      color: #0f0a1c; /* 文字がはっきり読めるようにダークカラー */
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -272,7 +272,7 @@
 
     /* イベントリスト */
     .event-list {
-      max-height: 600px;
+      max-height: 700px;
       overflow-y: auto;
       padding-right: 5px;
     }
@@ -381,11 +381,6 @@
       margin-top: 25px;
     }
   </style>
-  
-  <script>
-    // 【必須】GASの「新しいデプロイ」で取得した最新のURL（https://script.google.com/～）をここに貼り付けてください
-    const GAS_WEB_APP_URL = "ここに最新のURLを貼り付けます";
-  </script>
 </head>
 <body>
 
@@ -446,7 +441,7 @@
           <input type="text" id="eventTitle" class="form-control" placeholder="例: クラウン・特別ショー" required maxlength="30">
         </div>
 
-        <!-- 4つの指定カテゴリ（色名は排除） -->
+        <!-- 4つの指定カテゴリ -->
         <div class="form-group">
           <label for="eventColor">カテゴリー</label>
           <select id="eventColor" class="form-control">
@@ -543,7 +538,6 @@
       return dates;
     }
 
-    // 開始日を変更した際、終了日が開始日より前にならないよう自動調整する
     function syncEndDate(val) {
       const endDateInput = document.getElementById("eventEndDate");
       if (!endDateInput.value || endDateInput.value < val) {
@@ -597,10 +591,9 @@
         const dayEventsContainer = document.createElement("div");
         dayEventsContainer.className = "day-events";
         
-        // 期間中（開始日〜終了日）にこの日が含まれているイベントを抽出
         const filtered = events.filter(e => {
           if (!e.date) return false;
-          const endD = e.endDate || e.date; // 終了日がなければ開始日と同じ
+          const endD = e.endDate || e.date;
           return dateStr >= e.date && dateStr <= endD;
         });
 
@@ -609,14 +602,12 @@
           mEv.className = "mini-event";
           mEv.style.backgroundColor = ev.color || "#b388ff";
           
-          // カテゴリに合わせた絵文字を戦闘に付与
           let icon = "✨";
           if (ev.color === "#4fc3f7") icon = "🌐";
           if (ev.color === "#ff4d4d") icon = "🎥";
           if (ev.color === "#ff8da1") icon = "💌";
           if (ev.color === "#b388ff") icon = "👑";
 
-          // 【ご要望】最初の7文字のみ表示する
           const displayTitle = ev.title.length > 7 ? ev.title.substring(0, 7) + ".." : ev.title;
           mEv.innerText = `${icon} ${displayTitle}`;
           dayEventsContainer.appendChild(mEv);
@@ -628,7 +619,6 @@
           if (isAdmin) {
             openAddModal(dateStr);
           } else if (filtered.length > 0) {
-            // 一般閲覧者はクリックで直近の予定詳細を表示
             let details = filtered.map(e => {
               return `【${e.title}】\n期間: ${e.date} 〜 ${e.endDate || e.date}\n時間: ${e.startTime || '未定'}〜${e.endTime || '未定'}\n詳細: ${e.description || 'なし'}`;
             }).join("\n\n");
@@ -688,7 +678,7 @@
       document.getElementById("modalTitle").innerText = "🎪 CREATE EVENT";
       document.getElementById("eventId").value = "id_" + Date.now();
       document.getElementById("eventDate").value = defaultDate;
-      document.getElementById("eventEndDate").value = defaultDate; // デフォルトは当日から当日
+      document.getElementById("eventEndDate").value = defaultDate;
       document.getElementById("eventTitle").value = "";
       document.getElementById("eventColor").value = "#4fc3f7";
       document.getElementById("startTime").value = "";
@@ -740,7 +730,7 @@
       const eventData = {
         id: document.getElementById("eventId").value,
         date: document.getElementById("eventDate").value,
-        endDate: document.getElementById("eventEndDate").value, // 終了日を保存データに追加
+        endDate: document.getElementById("eventEndDate").value,
         title: document.getElementById("eventTitle").value,
         color: document.getElementById("eventColor").value,
         startTime: document.getElementById("startTime").value,
